@@ -1,0 +1,24 @@
+{
+  "name": "educative.io-downloader",
+  "version": "1.0.0",
+  "description": "Download course from educative.io",
+  "main": "app.js",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.3",
+    "config": "^3.2.4",
+    "puppeteer": "^2.0.0"
+  },
+  "devDependencies": {
+    "@types/cheerio": "^0.22.15",
+    "@types/node": "^13.1.7",
+    "@types/puppeteer": "^2.0.0"
+  },
+  "scripts": {
+    "start": "node build/src/app.js",
+    "dev": "nodemon build/src/app.js",
+    "compile": "tsc -p .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Shihab Mridha",
+  "license": "ISC"
+}
