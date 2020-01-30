@@ -11,7 +11,8 @@ const COURSE_URLS: string[] = config.get('courseUrls');
 const EMAIL: string = config.get('email');
 const PASSWORD: string = config.get('password');
 
-const ROOT_PATH = process.env.PWD;
+const ROOT_PATH = __dirname + '/../../';
+
 let SAVE_DESTINATION = '';
 
 let browser: Browser;
@@ -22,8 +23,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!browser) {
+  if (!browser && (await isDireectoryExists(`${ROOT_PATH}/data`))) {
     browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
+  } else {
+    browser = await launch({ headless: true });
   }
 
   /**
