@@ -103,7 +103,7 @@ async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<Map<stri
   const page = await browser.newPage();
 
   await page.goto(COURSE_URL, { waitUntil: 'networkidle0' });
-  const title = await page.title();
+  const title = (await page.title()).replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '_');
 
   // Create downloads folder
   if (!(await isDireectoryExists(`${ROOT_PATH}/downloads`))) {
