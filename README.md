@@ -4,7 +4,7 @@
 
 This tool is to download course from educative.io for later usage. It uses your login credentials and download the course.
 
-> Might now work in WSL
+> Might not work in WSL
 
 # Usage
 - Install typescript cli.
