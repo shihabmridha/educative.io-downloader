@@ -1,4 +1,4 @@
-import { launch, Browser, Overrides } from 'puppeteer';
+import { launch, Browser } from 'puppeteer';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as config from 'config';
@@ -29,16 +29,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  if (!browser && (await isDireectoryExists(`${ROOT_PATH}/data`))) {
-    browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
-  } else {
-    browser = await launch({ headless: true });
-  }
+  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
 
-  /**
-   * Cookies etc are stored in ./data directory. If it doesn't exists then user is not logged in.
-   */
-  if (!(await isDireectoryExists(`${ROOT_PATH}/data`))) {
+  const loggedIn = await isLoggedIn();
+  if (!loggedIn) {
     await login();
   }
 
@@ -51,17 +45,18 @@ async function main(): Promise<void> {
 
     let i = 1;
     let promises = [];
+    let doToggleMenu = true;
     for (const page of pageLinks) {
       try {
         if (i % 5 === 0 || i === pageLinks.length) {
+          doToggleMenu = false;
           await Promise.all(promises.map((p) => p.catch((e: Error) => console.log(e.message))));
           promises = [];
         }
 
         console.log(`Processing => ${page.title} (${page.link})`);
 
-        promises.push(downloadPage(`${i}.${page.title}`, page.link));
-
+        promises.push(downloadPage(`${i}.${page.title}`, page.link, doToggleMenu));
         i++;
       } catch (error) {
         console.error(error.message);
@@ -70,6 +65,7 @@ async function main(): Promise<void> {
 
     // Wait for pending promises to resolve
     await Promise.all(promises);
+
   }
 
   await browser.close();
@@ -118,7 +114,7 @@ async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<PageTitl
   return pageLinks;
 }
 
-async function downloadPage(title: string, link: string): Promise<void> {
+async function downloadPage(title: string, link: string, doToggleMenu: boolean): Promise<void> {
   const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
   const page = await browser.newPage();
@@ -135,7 +131,10 @@ async function downloadPage(title: string, link: string): Promise<void> {
       printBackground: true,
     });
   } else {
-    await page.click('#sidebar-hamburger');
+    if (doToggleMenu) {
+      await page.click('#sidebar-hamburger');
+    }
+
     await setTimeoutPromise(300); // Wait for munu to close
 
     await page.screenshot({ path: `${SAVE_DESTINATION}/${normalizedTitle}.png`, fullPage: true });
@@ -147,20 +146,38 @@ async function login(): Promise<void> {
   console.log('Loggin in.');
 
   const page = await browser.newPage();
-  await page.setRequestInterception(true);
 
-  page.on('request', (interceptedRequest) => {
-    const data: Overrides = {
-      method: 'POST',
-      postData: `email=${EMAIL}&password=${PASSWORD}`
-    };
+  await page.goto('https://www.educative.io', { waitUntil: 'networkidle0' });
+  await page.click('.MuiButton-label');
+  await page.type('#loginform-email', EMAIL);
+  await page.type('#loginform-password', PASSWORD);
 
-    interceptedRequest.continue(data);
-  });
+  await setTimeoutPromise(2000);
 
-  await page.goto('https://www.educative.io/api/user/login');
+  await page.click('#modal-login');
+
+  const element = await page.waitForSelector("#alert span", { timeout: 5000 });
+  const label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
+
+  if (label && label !== 'Signed in') {
+    throw new Error(label);
+  }
 
   await page.close();
+}
+
+async function isLoggedIn(): Promise<boolean> {
+  const page = await browser.newPage();
+  await page.goto('https://www.educative.io', { waitUntil: 'networkidle0' });
+  const element = await page.$('.MuiButton-outlined');
+  let label;
+  if (element) {
+    label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
+  }
+
+  await page.close();
+
+  return label !== 'Log in';
 }
 
 /**
