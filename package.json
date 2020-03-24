@@ -5,6 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "config": "^3.2.4",
+    "ora": "^4.0.3",
     "puppeteer": "^2.0.0"
   },
   "devDependencies": {

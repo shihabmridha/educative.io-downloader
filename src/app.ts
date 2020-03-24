@@ -2,6 +2,9 @@ import { launch, Browser } from 'puppeteer';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as config from 'config';
+import * as ora from 'ora';
+
+const spinner = ora('Initiating process').start();
 
 const access = util.promisify(fs.access);
 const mkdir = util.promisify(fs.mkdir);
@@ -11,6 +14,7 @@ const COURSE_URLS: string[] = config.get('courseUrls');
 const EMAIL: string = config.get('email');
 const PASSWORD: string = config.get('password');
 const MAKE_PDF: boolean = config.get('pdf');
+const HTTP_REQUEST_TIMEOUT = 30000; // In ms
 
 const ROOT_PATH = __dirname + '/../../';
 
@@ -34,14 +38,16 @@ async function main(): Promise<void> {
   const loggedIn = await isLoggedIn();
   if (!loggedIn) {
     await login();
+  } else {
+    spinner.text = 'Already logged in.';
   }
 
   for (const COURSE_URL of COURSE_URLS) {
-    console.log('Download in proguress. Course URL => ' + COURSE_URL);
+    spinner.text = 'Download in proguress. Course URL => ' + COURSE_URL;
 
     const pageLinks: PageTitleAndLink[] = await fetchCourseAndFindPageLinks(COURSE_URL);
 
-    console.log('Total content found: ' + pageLinks.length);
+    spinner.text = 'Total lessons found: ' + pageLinks.length;
 
     let i = 1;
     let promises = [];
@@ -50,11 +56,10 @@ async function main(): Promise<void> {
       try {
         if (i % 5 === 0 || i === pageLinks.length) {
           doToggleMenu = false;
-          await Promise.all(promises.map((p) => p.catch((e: Error) => console.log(e.message))));
+          spinner.text = `Processing batch of lessons.`;
+          await Promise.all(promises.map((p) => p.catch((e: Error) => console.error(e.message))));
           promises = [];
         }
-
-        console.log(`Processing => ${page.title} (${page.link})`);
 
         promises.push(downloadPage(`${i}.${page.title}`, page.link, doToggleMenu));
         i++;
@@ -69,6 +74,8 @@ async function main(): Promise<void> {
   }
 
   await browser.close();
+
+  spinner.stop();
 }
 
 async function isDireectoryExists(path: string): Promise<boolean> {
@@ -82,9 +89,10 @@ async function isDireectoryExists(path: string): Promise<boolean> {
 }
 
 async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<PageTitleAndLink[]> {
+  spinner.text = 'Navigating to courses page. URL: ' + COURSE_URL;
   const page = await browser.newPage();
 
-  await page.goto(COURSE_URL, { waitUntil: 'networkidle0' });
+  await page.goto(COURSE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
   const title = (await page.title()).replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '_');
 
   // Create downloads folder
@@ -92,6 +100,7 @@ async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<PageTitl
     await mkdir(`${ROOT_PATH}/downloads`);
   }
 
+  spinner.text = 'Creating course directory.';
   // Create course folder
   if (!(await isDireectoryExists(`${ROOT_PATH}/downloads/${title}`))) {
     await mkdir(`${ROOT_PATH}/downloads/${title}`);
@@ -99,6 +108,7 @@ async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<PageTitl
 
   SAVE_DESTINATION = ROOT_PATH + '/downloads/' + title;
 
+  spinner.text = 'Looking for lessons\'s urls.';
   const pageLinks = await page.evaluate(() => {
     const links: HTMLAnchorElement[] = Array.from(document.querySelectorAll('.tab-content a'));
     return links.map((link) => {
@@ -118,17 +128,32 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
   const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
   const page = await browser.newPage();
-  await page.setViewport({ width: 800, height: 580 });
 
-  await page.goto(link, { waitUntil: 'networkidle0' });
+  await page.goto(link, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
 
-  await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], .summary { display: none !important; }' });
+  await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
   if (MAKE_PDF) {
+    try {
+      await page.evaluate(() => {
+        const node = document.getElementById('view-collection-article-content-root');
+        node.childNodes[0].childNodes[0].childNodes[0].remove();
+      });
+    } catch (error) {
+      console.error(error.message);
+    }
+
     await page.emulateMediaType('screen');
     await page.pdf({
       path: `${SAVE_DESTINATION}/${normalizedTitle}.pdf`,
       printBackground: true,
+      format: 'A4',
+      margin: {
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+      }
     });
   } else {
     if (doToggleMenu) {
@@ -143,11 +168,10 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
 }
 
 async function login(): Promise<void> {
-  console.log('Loggin in.');
+  spinner.text = 'Loggin in.';
 
   const page = await browser.newPage();
-
-  await page.goto('https://www.educative.io', { waitUntil: 'networkidle0' });
+  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
   await page.click('.MuiButton-label');
   await page.type('#loginform-email', EMAIL);
   await page.type('#loginform-password', PASSWORD);
@@ -156,7 +180,7 @@ async function login(): Promise<void> {
 
   await page.click('#modal-login');
 
-  const element = await page.waitForSelector("#alert span", { timeout: 5000 });
+  const element = await page.waitForSelector("#alert span", { timeout: 10000 });
   const label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
 
   if (label && label !== 'Signed in') {
@@ -167,10 +191,13 @@ async function login(): Promise<void> {
 }
 
 async function isLoggedIn(): Promise<boolean> {
+  spinner.text = 'Checking if already logged in.';
+
   const page = await browser.newPage();
-  await page.goto('https://www.educative.io', { waitUntil: 'networkidle0' });
+  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
+
   const element = await page.$('.MuiButton-outlined');
-  let label;
+  let label: string;
   if (element) {
     label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
   }
