@@ -1,4 +1,4 @@
-import { launch, Browser } from 'puppeteer';
+import { launch, Browser, Page } from 'puppeteer';
 import * as fs from 'fs';
 import * as util from 'util';
 import * as config from 'config';
@@ -8,12 +8,15 @@ const spinner = ora('Initiating process').start();
 
 const access = util.promisify(fs.access);
 const mkdir = util.promisify(fs.mkdir);
+const writeFile = util.promisify(fs.writeFile);
 const setTimeoutPromise = util.promisify(setTimeout);
 
 const COURSE_URLS: string[] = config.get('courseUrls');
 const EMAIL: string = config.get('email');
 const PASSWORD: string = config.get('password');
-const MAKE_PDF: boolean = config.get('pdf');
+const SAVE_AS: string = config.get('saveAs');
+const CHECK_IS_LOGGED_IN: boolean = config.get('loginCheck');
+
 const HTTP_REQUEST_TIMEOUT = 30000; // In ms
 
 const ROOT_PATH = __dirname + '/../../';
@@ -21,6 +24,11 @@ const ROOT_PATH = __dirname + '/../../';
 let SAVE_DESTINATION = '';
 
 let browser: Browser;
+
+enum SAVE_LESSON_AS {
+  PDF = 'pdf',
+  HTML = 'html'
+}
 
 interface PageTitleAndLink {
   title: string;
@@ -35,12 +43,17 @@ async function main(): Promise<void> {
 
   browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
 
-  const loggedIn = await isLoggedIn();
-  if (!loggedIn) {
-    await login();
+  if (CHECK_IS_LOGGED_IN) {
+    const loggedIn = await isLoggedIn();
+    if (!loggedIn) {
+      await login();
+    } else {
+      spinner.text = 'Already logged in.';
+    }
   } else {
-    spinner.text = 'Already logged in.';
+    spinner.text = 'Skipping login check.';
   }
+
 
   for (const COURSE_URL of COURSE_URLS) {
     spinner.text = 'Download in proguress. Course URL => ' + COURSE_URL;
@@ -76,6 +89,8 @@ async function main(): Promise<void> {
   await browser.close();
 
   spinner.stop();
+
+  console.log('=> Done');
 }
 
 async function isDireectoryExists(path: string): Promise<boolean> {
@@ -88,9 +103,18 @@ async function isDireectoryExists(path: string): Promise<boolean> {
   return true;
 }
 
+async function getPage(): Promise<Page> {
+  let [page] = await browser.pages();
+  if (!page) {
+    page = await browser.newPage();
+  }
+
+  return page;
+}
+
 async function fetchCourseAndFindPageLinks(COURSE_URL: string): Promise<PageTitleAndLink[]> {
   spinner.text = 'Navigating to courses page. URL: ' + COURSE_URL;
-  const page = await browser.newPage();
+  const page = await getPage();
 
   await page.goto(COURSE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
   const title = (await page.title()).replace(/[&\/\\#,+()$~%.'":*?<>{}]/g, '_');
@@ -133,7 +157,7 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
 
   await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
-  if (MAKE_PDF) {
+  if (SAVE_AS === SAVE_LESSON_AS.PDF) {
     try {
       await page.evaluate(() => {
         const node = document.getElementById('view-collection-article-content-root');
@@ -155,6 +179,23 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
         left: 0,
       }
     });
+  } else if (SAVE_AS === SAVE_LESSON_AS.HTML) {
+    try {
+      await page.evaluate(() => {
+        const node = document.getElementById('view-collection-article-content-root');
+        node.style.cssText = 'margin-top: -70px';
+
+        const content = node.childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0];
+        node.childNodes[0].childNodes[0].childNodes[1].appendChild(content);
+        node.childNodes[0].childNodes[0].childNodes[0].remove();
+      });
+    } catch (error) {
+      console.error(error.message);
+    }
+
+    const cdp = await page.target().createCDPSession();
+    const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' }) as any;
+    await writeFile(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`, data);
   } else {
     if (doToggleMenu) {
       await page.click('#sidebar-hamburger');
@@ -170,7 +211,7 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
 async function login(): Promise<void> {
   spinner.text = 'Loggin in.';
 
-  const page = await browser.newPage();
+  const page = await getPage();
   await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
   await page.click('.MuiButton-label');
   await page.type('#loginform-email', EMAIL);
@@ -193,7 +234,8 @@ async function login(): Promise<void> {
 async function isLoggedIn(): Promise<boolean> {
   spinner.text = 'Checking if already logged in.';
 
-  const page = await browser.newPage();
+  const page = await getPage();
+
   await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
   const element = await page.$('.MuiButton-outlined');
@@ -201,8 +243,6 @@ async function isLoggedIn(): Promise<boolean> {
   if (element) {
     label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
   }
-
-  await page.close();
 
   return label !== 'Log in';
 }
