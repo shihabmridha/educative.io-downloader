@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
+  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true, defaultViewport: null, args: ['--window-size=1,1'] });
 
   if (CHECK_IS_LOGGED_IN) {
     const loggedIn = await isLoggedIn();
@@ -204,8 +204,8 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
     await setTimeoutPromise(300); // Wait for munu to close
 
     await page.screenshot({ path: `${SAVE_DESTINATION}/${normalizedTitle}.png`, fullPage: true });
-    await page.close();
   }
+  await page.close();
 }
 
 async function login(): Promise<void> {
