@@ -41,7 +41,7 @@ async function main(): Promise<void> {
     return;
   }
 
-  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true, defaultViewport: null, args: ['--window-size=1,1'] });
+  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true });
 
   if (CHECK_IS_LOGGED_IN) {
     const loggedIn = await isLoggedIn();
@@ -54,6 +54,13 @@ async function main(): Promise<void> {
     spinner.text = 'Skipping login check.';
   }
 
+  await browser.close();
+
+  /**
+   * Open a new browser with some additional parameters. We did not do it in the first place because,
+   * it was causing an error while attempting to login.
+   */
+  browser = await launch({ userDataDir: ROOT_PATH + '/data', headless: true, defaultViewport: null, args: ['--window-size=1,1'] })
 
   for (const COURSE_URL of COURSE_URLS) {
     spinner.text = 'Download in proguress. Course URL => ' + COURSE_URL;
