@@ -19,7 +19,9 @@ Config file (___config/default.json___) the following properties.
 - email: Your subscription email.
 - password: Your subscription password.
 - loginCheck: If you are already logged in then you can set it to ___false___ to skip login check before downloading a course.
-- saveAs: Available options: ___`pdf`, `html`, `image`___. Default is ___`image`___.
+- saveAs: Available options: ___`pdf` and `html`___. Default is ___`html`___.
+
+> IMPORTANT: You you save as html it is actually gonna save as mhtml.
 
 
 **I have created this for my own usage. Managed only a couple of hours to create this tool. You might find a lot of issues. Feel free to create a PR.**

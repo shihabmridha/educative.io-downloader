@@ -10,7 +10,9 @@
   },
   "devDependencies": {
     "@types/node": "^13.1.7",
-    "@types/puppeteer": "^2.0.0"
+    "@types/puppeteer": "^2.0.0",
+    "@types/config": "^0.0.36",
+    "@types/ora": "3.2.0"
   },
   "scripts": {
     "start": "node build/src/app.js",

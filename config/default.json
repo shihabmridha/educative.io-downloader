@@ -1,7 +1,7 @@
 {
     "email": "example@gmail.com",
     "password": "yourPassword",
-    "loginCheck": false,
-    "saveAs": "image",
-    "courseUrls": ["https://www.educative.io/courses/docker-for-developers"]
+    "loginCheck": true,
+    "saveAs": "html",
+    "courseUrl": "https://www.educative.io/courses/docker-for-developers"
 }
