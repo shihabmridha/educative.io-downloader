@@ -157,6 +157,14 @@ async function downloadPage(title: string, link: string, doToggleMenu: boolean):
 
   await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
+  await page.evaluate(() => {
+    const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0 ; i < xPathResult.snapshotLength; i++) {
+        const element = xPathResult.snapshotItem(i) as HTMLElement;
+        element.click();
+    }
+  });
+
   if (SAVE_AS === SAVE_LESSON_AS.PDF) {
     try {
       await page.evaluate(() => {
