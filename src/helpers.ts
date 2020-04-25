@@ -7,6 +7,14 @@ export const writeFile = util.promisify(fs.writeFile);
 export const setTimeoutPromise = util.promisify(setTimeout);
 
 export async function isDireectoryExists(path: string): Promise<boolean> {
+  return (await isExists(path));
+}
+
+export async function isFileExists(path: string): Promise<boolean> {
+  return (await isExists(path));
+}
+
+export async function isExists(path: string): Promise<boolean> {
   try {
     await access(path, fs.constants.F_OK);
   } catch (error) {

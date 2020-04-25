@@ -1,5 +1,5 @@
 import * as config from 'config';
-import { isDireectoryExists, mkdir, writeFile } from './helpers';
+import { isDireectoryExists, mkdir, writeFile, isFileExists } from './helpers';
 import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS } from './globals';
 import { getPage, getSpecialBrowser } from './browser';
 import { Browser, Page } from 'puppeteer';
@@ -54,16 +54,20 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
 }
 
 export async function downloadPage(title: string, link: string): Promise<void> {
-  console.log(`Downloading => ${title} - (${link})`);
-
   let browser: Browser;
   let page: Page;
 
   try {
+    const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
+
+    if ((await isAlreadyDownloaded(normalizedTitle))) {
+      return;
+    }
+
+    console.log(`Downloading => ${title} - (${link})`);
+
     browser = await getSpecialBrowser();
     page = await browser.newPage();
-
-    const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
     await page.goto(link, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
 
@@ -110,4 +114,12 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   if (page) {
     await page.close();
   }
+}
+
+async function isAlreadyDownloaded(normalizedTitle: string) {
+  if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+    return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.pdf`));
+  }
+
+  return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`));
 }
