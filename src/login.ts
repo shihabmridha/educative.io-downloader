@@ -1,5 +1,4 @@
 import * as config from 'config';
-import { setSpinnerText } from './spinner';
 import { setTimeoutPromise } from './helpers';
 import { HTTP_REQUEST_TIMEOUT } from './globals';
 import { getPage, getBrowser } from './browser';
@@ -11,7 +10,7 @@ console.log(`EMAIL: ${EMAIL}, PASSWORD: ${PASSWORD}`);
 
 export async function isLoggedIn(): Promise<boolean> {
 
-  setSpinnerText('Checking if already logged in');
+  console.log('Checking if already logged in');
 
   /**
    * At this point we should not have any browser open yet.
@@ -33,7 +32,7 @@ export async function isLoggedIn(): Promise<boolean> {
 }
 
 export async function login(): Promise<void> {
-  setSpinnerText('Loggin in');
+  console.log('Loggin in');
 
   const page = await getPage();
   await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });

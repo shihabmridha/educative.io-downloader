@@ -31,7 +31,7 @@ export async function getBrowser(): Promise<Browser> {
 export async function getSpecialBrowser(): Promise<Browser> {
   const specialArgs = {
     defaultViewport: null,
-    args: ['--window-size=1,1']
+    args: ['--window-size=0,0']
   };
 
   // If a browser is open but not special then close it

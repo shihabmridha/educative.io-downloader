@@ -1,8 +1,8 @@
 import * as config from 'config';
-import { setSpinnerText } from './spinner';
 import { isDireectoryExists, mkdir, writeFile } from './helpers';
 import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS } from './globals';
 import { getPage, getSpecialBrowser } from './browser';
+import { Browser, Page } from 'puppeteer';
 
 let SAVE_DESTINATION = '';
 const SAVE_AS: string = config.get('saveAs');
@@ -11,7 +11,7 @@ console.log(`SAVE AS: ${SAVE_AS}`);
 
 export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLink[]> {
 
-  setSpinnerText(`Navigating to courses page. URL: ${courseUrl}`);
+  console.log(`Navigating to courses page. URL: ${courseUrl}`);
 
   // This function close non-special browsre (if open) and open special browser
   await getSpecialBrowser();
@@ -26,7 +26,7 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
     await mkdir(`${ROOT_PATH}/downloads`);
   }
 
-  setSpinnerText(`Creating course directory`);
+  console.log(`Creating course directory`);
 
   // Create course folder
   if (!(await isDireectoryExists(`${ROOT_PATH}/downloads/${title}`))) {
@@ -35,7 +35,7 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
 
   SAVE_DESTINATION = ROOT_PATH + '/downloads/' + title;
 
-  setSpinnerText(`Looking for lessons\'s urls`);
+  console.log(`Looking for lessons\'s urls`);
 
   const pageLinks = await page.evaluate(() => {
     const links: HTMLAnchorElement[] = Array.from(document.querySelectorAll('.tab-content a'));
@@ -47,16 +47,22 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
     });
   });
 
+  console.log(`Total lessons: ${pageLinks.length}`);
   // await page.close();
 
   return pageLinks;
 }
 
 export async function downloadPage(title: string, link: string): Promise<void> {
-  const browser = await getSpecialBrowser();
-  const page = await browser.newPage();
+  console.log(`Downloading => ${title} - (${link})`);
+
+  let browser: Browser;
+  let page: Page;
 
   try {
+    browser = await getSpecialBrowser();
+    page = await browser.newPage();
+
     const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
     await page.goto(link, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
@@ -64,7 +70,7 @@ export async function downloadPage(title: string, link: string): Promise<void> {
     await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
     await page.evaluate(({ SAVE_AS, SAVE_LESSON_AS }) => {
-      // Expant all slides in the page
+      // Expand all slides in the page
       const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < xPathResult.snapshotLength; i++) {
         const element = xPathResult.snapshotItem(i) as HTMLElement;
@@ -97,9 +103,11 @@ export async function downloadPage(title: string, link: string): Promise<void> {
       await writeFile(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`, data);
     }
   } catch (error) {
-    console.log('Failed to save ', link);
+    console.log('Failed to download ', link);
     console.log('Reason:', error.message);
   }
 
-  await page.close();
+  if (page) {
+    await page.close();
+  }
 }

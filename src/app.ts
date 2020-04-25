@@ -3,7 +3,6 @@ import { isLoggedIn, login } from './login';
 import { fetchLessonUrls, downloadPage } from './download';
 import { PageTitleAndLink } from './globals';
 import { getBrowser } from './browser';
-import { setSpinnerText, stopSpinner } from './spinner';
 
 const COURSE_URL: string = config.get('courseUrl');
 const LOGIN_CHECK: boolean = config.get('loginCheck');
@@ -22,7 +21,7 @@ async function main(): Promise<void> {
     if (!loggedIn) {
       await login();
     } else {
-      setSpinnerText('Already logged in');
+      console.log('Already logged in');
     }
   }
 
@@ -33,7 +32,6 @@ async function main(): Promise<void> {
   for (const page of pageLinks) {
     try {
       if (i % 5 === 0 || i === pageLinks.length) {
-        setSpinnerText(`Processing batch of lessons.`);
         await Promise.all(promises.map((p) => p));
         promises = [];
       }
@@ -49,8 +47,6 @@ async function main(): Promise<void> {
   await Promise.all(promises);
 
   (await getBrowser()).close();
-
-  stopSpinner();
 
   console.log('=> Done');
 }
