@@ -53,14 +53,28 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
   return pageLinks;
 }
 
-export async function downloadPage(title: string, link: string): Promise<void> {
+export async function createLanguageDirectories(languagesAvailable: string[]) {
+  for(let language of languagesAvailable) {
+    // Create language folder
+    if (!(await isDireectoryExists(`${SAVE_DESTINATION}/${language}`))) {
+      await mkdir(`${SAVE_DESTINATION}/${language}`);
+    }
+  }
+}
+
+export async function downloadPage(title: string, link: string, language: string = ''): Promise<void> {
   let browser: Browser;
   let page: Page;
+  let newSaveDestination = SAVE_DESTINATION;
+
+  if(language) {
+    newSaveDestination  =  newSaveDestination + '/' + language;
+  }
 
   try {
     const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
-    if ((await isAlreadyDownloaded(normalizedTitle))) {
+    if ((await isAlreadyDownloaded(normalizedTitle, newSaveDestination))) {
       return;
     }
 
@@ -96,7 +110,7 @@ export async function downloadPage(title: string, link: string): Promise<void> {
     if (SAVE_AS === SAVE_LESSON_AS.PDF) {
       await page.emulateMediaType('screen');
       await page.pdf({
-        path: `${SAVE_DESTINATION}/${normalizedTitle}.pdf`,
+        path: `${newSaveDestination}/${normalizedTitle}.pdf`,
         printBackground: true,
         format: 'A4',
         margin: { top: 0, right: 0, bottom: 0, left: 0, }
@@ -104,7 +118,7 @@ export async function downloadPage(title: string, link: string): Promise<void> {
     } else {
       const cdp = await page.target().createCDPSession();
       const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' }) as any;
-      await writeFile(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`, data);
+      await writeFile(`${newSaveDestination}/${normalizedTitle}.mhtml`, data);
     }
   } catch (error) {
     console.log('Failed to download ', link);
@@ -116,10 +130,18 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   }
 }
 
-async function isAlreadyDownloaded(normalizedTitle: string) {
+async function isAlreadyDownloaded(normalizedTitle: string, newSaveDestination: string) {
   if (SAVE_AS === SAVE_LESSON_AS.PDF) {
-    return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.pdf`));
+    if(await isFileExists(`${newSaveDestination}/${normalizedTitle}.pdf`)) {
+      console.log(`${normalizedTitle}.pdf already downloaded`);
+      return true;
+    }
+    return false;
   }
 
-  return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`));
+  if(await isFileExists(`${newSaveDestination}/${normalizedTitle}.mhtml`)) {
+    console.log(`${normalizedTitle}.mhtml already downloaded`);
+    return true;
+  }
+  return false;
 }

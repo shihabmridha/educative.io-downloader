@@ -5,6 +5,7 @@
   "main": "app.js",
   "dependencies": {
     "config": "^3.2.4",
+    "inquirer": "^7.1.0",
     "puppeteer": "^2.0.0"
   },
   "devDependencies": {
