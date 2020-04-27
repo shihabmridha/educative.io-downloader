@@ -8,7 +8,7 @@ let SAVE_DESTINATION = '';
 const SAVE_AS: string = config.get('saveAs');
 const MULTI_LANGUAGE: boolean = config.get('multiLanguage');
 
-const IS_DIRECTORY_EXISTS = {};
+const IS_DIRECTORY_CREATED = {};
 
 console.log(`SAVE AS: ${SAVE_AS}`);
 
@@ -114,14 +114,14 @@ export async function downloadPage(title: string, link: string): Promise<void> {
      */
     if (languages.length > 0 && MULTI_LANGUAGE) {
       for (const language of languages) {
-        if (!IS_DIRECTORY_EXISTS[language] && !isDireectoryExists(`${SAVE_DESTINATION}/${language}`)) {
+        if (!IS_DIRECTORY_CREATED[language] && !(await isDireectoryExists(`${SAVE_DESTINATION}/${language}`))) {
           // Create language dir
           await mkdir(`${SAVE_DESTINATION}/${language}`);
 
-          IS_DIRECTORY_EXISTS[language] = true;
+          IS_DIRECTORY_CREATED[language] = true;
         }
 
-        if (isAlreadyDownloaded(normalizedTitle, language)) {
+        if ((await isAlreadyDownloaded(normalizedTitle, language))) {
           continue;
         }
 
