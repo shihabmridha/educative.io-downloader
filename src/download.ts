@@ -6,6 +6,9 @@ import { Browser, Page } from 'puppeteer';
 
 let SAVE_DESTINATION = '';
 const SAVE_AS: string = config.get('saveAs');
+const MULTI_LANGUAGE: boolean = config.get('multiLanguage');
+
+const IS_DIRECTORY_EXISTS = {};
 
 console.log(`SAVE AS: ${SAVE_AS}`);
 
@@ -60,7 +63,7 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   try {
     const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
-    if ((await isAlreadyDownloaded(normalizedTitle))) {
+    if (!MULTI_LANGUAGE && (await isAlreadyDownloaded(normalizedTitle))) {
       return;
     }
 
@@ -73,13 +76,24 @@ export async function downloadPage(title: string, link: string): Promise<void> {
 
     await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
-    await page.evaluate(({ SAVE_AS, SAVE_LESSON_AS }) => {
+    const languages = await page.evaluate(({ SAVE_AS, SAVE_LESSON_AS }) => {
       // Expand all slides in the page
       const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < xPathResult.snapshotLength; i++) {
         const element = xPathResult.snapshotItem(i) as HTMLElement;
         element.click();
       }
+
+      const languages = [];
+      const codeContainer = document.getElementsByClassName('code-container');
+      if (codeContainer.length === 0) {
+        return languages;
+      }
+
+      const languageTabs = (codeContainer[0].previousSibling.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+      languageTabs.forEach((e) => {
+        languages.push(e.querySelector('span').innerText);
+      });
 
       const node = document.getElementById('view-collection-article-content-root');
       if (SAVE_AS === SAVE_LESSON_AS.PDF) {
@@ -91,20 +105,53 @@ export async function downloadPage(title: string, link: string): Promise<void> {
         node.childNodes[0].childNodes[0].childNodes[1].appendChild(content);
         node.childNodes[0].childNodes[0].childNodes[0].remove();
       }
+
+      return languages;
     }, { SAVE_AS, SAVE_LESSON_AS });
 
-    if (SAVE_AS === SAVE_LESSON_AS.PDF) {
-      await page.emulateMediaType('screen');
-      await page.pdf({
-        path: `${SAVE_DESTINATION}/${normalizedTitle}.pdf`,
-        printBackground: true,
-        format: 'A4',
-        margin: { top: 0, right: 0, bottom: 0, left: 0, }
-      });
+    /**
+     * If lesson has multiple language and user set multiLanguage to true then download all language.
+     */
+    if (languages.length > 0 && MULTI_LANGUAGE) {
+      for (const language of languages) {
+        if (!IS_DIRECTORY_EXISTS[language] && !isDireectoryExists(`${SAVE_DESTINATION}/${language}`)) {
+          // Create language dir
+          await mkdir(`${SAVE_DESTINATION}/${language}`);
+
+          IS_DIRECTORY_EXISTS[language] = true;
+        }
+
+        if (isAlreadyDownloaded(normalizedTitle, language)) {
+          continue;
+        }
+
+        const path = `${SAVE_DESTINATION}/${language}/${normalizedTitle}`;
+
+        await page.evaluate((language) => {
+          const languageTabs = (document.getElementsByClassName('code-container')[0].previousSibling.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+          languageTabs.forEach((e) => {
+            if (e.querySelector('span').innerText === language) {
+              e.querySelector('span').click();
+            }
+          });
+        }, language);
+
+        // waiting 1 seconds just to be sure language has been changed
+        await page.waitFor(1000);
+
+        if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+          await savePageAsPDF(page, path);
+        } else {
+          await savePageAsMHTML(page, path);
+        }
+      }
     } else {
-      const cdp = await page.target().createCDPSession();
-      const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' }) as any;
-      await writeFile(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`, data);
+      const path = `${SAVE_DESTINATION}/${normalizedTitle}`;
+      if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+        await savePageAsPDF(page, path);
+      } else {
+        await savePageAsMHTML(page, path);
+      }
     }
   } catch (error) {
     console.log('Failed to download ', link);
@@ -116,10 +163,35 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   }
 }
 
-async function isAlreadyDownloaded(normalizedTitle: string) {
-  if (SAVE_AS === SAVE_LESSON_AS.PDF) {
-    return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.pdf`));
+async function savePageAsPDF(page: Page, path: string): Promise<void> {
+  await page.emulateMediaType('screen');
+  await page.pdf({
+    path: path + '.pdf',
+    printBackground: true,
+    format: 'A4',
+    margin: { top: 0, right: 0, bottom: 0, left: 0, }
+  });
+}
+
+async function savePageAsMHTML(page: Page, path: string): Promise<void> {
+  const cdp = await page.target().createCDPSession();
+  const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' }) as any;
+  await writeFile(path + '.mhtml', data);
+}
+
+async function isAlreadyDownloaded(normalizedTitle: string, language?: string) {
+  let path = SAVE_DESTINATION;
+
+  if (language) {
+    path += `/${language}`;
   }
 
-  return (await isFileExists(`${SAVE_DESTINATION}/${normalizedTitle}.mhtml`));
+  if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+    path += `/${normalizedTitle}.pdf`;
+  } else {
+    path += `/${normalizedTitle}.mhtml`;
+  }
+
+  console.log('FILE PATH =>', path);
+  return (await isFileExists(path));
 }
