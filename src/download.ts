@@ -84,26 +84,31 @@ export async function downloadPage(title: string, link: string): Promise<void> {
         element.click();
       }
 
+      // Remove top & left space
+      const node = document.getElementById('view-collection-article-content-root');
+      if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+        node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
+      } else {
+        node.style.cssText = 'margin-top: -70px';
+
+        const content = node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.childNodes[0]?.childNodes[0];
+        node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.appendChild(content);
+        node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
+      }
+
+      // Fetch available language of code snippets
       const languages = [];
       const codeContainer = document.getElementsByClassName('code-container');
       if (codeContainer.length === 0) {
         return languages;
       }
 
-      const languageTabs = (codeContainer[0].previousSibling.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-      languageTabs.forEach((e) => {
-        languages.push(e.querySelector('span').innerText);
-      });
-
-      const node = document.getElementById('view-collection-article-content-root');
-      if (SAVE_AS === SAVE_LESSON_AS.PDF) {
-        node.childNodes[0].childNodes[0].childNodes[0].remove();
-      } else {
-        node.style.cssText = 'margin-top: -70px';
-
-        const content = node.childNodes[0].childNodes[0].childNodes[1].childNodes[0].childNodes[0];
-        node.childNodes[0].childNodes[0].childNodes[1].appendChild(content);
-        node.childNodes[0].childNodes[0].childNodes[0].remove();
+      const targetNode = codeContainer[0].previousSibling;
+      if (targetNode?.firstChild) {
+        const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+        languageTabs.forEach((e) => {
+          languages.push(e.querySelector('span').innerText);
+        });
       }
 
       return languages;
@@ -112,7 +117,9 @@ export async function downloadPage(title: string, link: string): Promise<void> {
     /**
      * If lesson has multiple language and user set multiLanguage to true then download all language.
      */
-    if (languages.length > 0 && MULTI_LANGUAGE) {
+    if (languages.length > 1 && MULTI_LANGUAGE) {
+      console.log(`Availabl languages for this lessons: ${languages.toString()}`);
+
       for (const language of languages) {
         if (!IS_DIRECTORY_CREATED[language] && !(await isDireectoryExists(`${SAVE_DESTINATION}/${language}`))) {
           // Create language dir
@@ -122,13 +129,14 @@ export async function downloadPage(title: string, link: string): Promise<void> {
         }
 
         if ((await isAlreadyDownloaded(normalizedTitle, language))) {
+          console.log(`Already downloaded ${title} (${language})`);
           continue;
         }
 
         const path = `${SAVE_DESTINATION}/${language}/${normalizedTitle}`;
 
         await page.evaluate((language) => {
-          const languageTabs = (document.getElementsByClassName('code-container')[0].previousSibling.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+          const languageTabs = (document.getElementsByClassName('code-container')[0]?.previousSibling?.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
           languageTabs.forEach((e) => {
             if (e.querySelector('span').innerText === language) {
               e.querySelector('span').click();
