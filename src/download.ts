@@ -63,7 +63,8 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   try {
     const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
-    if (!MULTI_LANGUAGE && (await isAlreadyDownloaded(normalizedTitle))) {
+    if ((await isAlreadyDownloaded(normalizedTitle))) {
+      console.log(`Already downloaded ${title}`);
       return;
     }
 
@@ -76,50 +77,16 @@ export async function downloadPage(title: string, link: string): Promise<void> {
 
     await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
-    const languages = await page.evaluate(({ SAVE_AS, SAVE_LESSON_AS }) => {
-      // Expand all slides in the page
-      const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      for (let i = 0; i < xPathResult.snapshotLength; i++) {
-        const element = xPathResult.snapshotItem(i) as HTMLElement;
-        element.click();
-      }
-
-      // Remove top & left space
-      const node = document.getElementById('view-collection-article-content-root');
-      if (SAVE_AS === SAVE_LESSON_AS.PDF) {
-        node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
-      } else {
-        node.style.cssText = 'margin-top: -70px';
-
-        const content = node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.childNodes[0]?.childNodes[0];
-        node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.appendChild(content);
-        node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
-      }
-
-      // Fetch available language of code snippets
-      const languages = [];
-      const codeContainer = document.getElementsByClassName('code-container');
-      if (codeContainer.length === 0) {
-        return languages;
-      }
-
-      const targetNode = codeContainer[0].previousSibling;
-      if (targetNode?.firstChild) {
-        const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-        languageTabs.forEach((e) => {
-          languages.push(e.querySelector('span').innerText);
-        });
-      }
-
-      return languages;
-    }, { SAVE_AS, SAVE_LESSON_AS });
+    /**
+     * The callback function passed to evaluate is actually executed in the browser.
+     * This is why we have to pass local variables explicitly in the second parameter.
+     */
+    const languages = await page.evaluate(pageEvaluation, { SAVE_AS, SAVE_LESSON_AS });
 
     /**
      * If lesson has multiple language and user set multiLanguage to true then download all language.
      */
     if (languages.length > 1 && MULTI_LANGUAGE) {
-      console.log(`Availabl languages for this lessons: ${languages.toString()}`);
-
       for (const language of languages) {
         if (!IS_DIRECTORY_CREATED[language] && !(await isDireectoryExists(`${SAVE_DESTINATION}/${language}`))) {
           // Create language dir
@@ -171,6 +138,53 @@ export async function downloadPage(title: string, link: string): Promise<void> {
   }
 }
 
+/**
+* We perform 3 major DOM manipulation here.
+* 1. Expand all the slides.
+* 2. Remove header/sidebar/footer etc. Mostly formatting.
+* 3. Extract available languages of code snippet to download them all in respective folder.
+*/
+function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
+  // Expand all slides in the page
+  const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+  for (let i = 0; i < xPathResult.snapshotLength; i++) {
+    const element = xPathResult.snapshotItem(i) as HTMLElement;
+    element.click();
+  }
+
+  // Remove top & left space
+  const node = document.getElementById('view-collection-article-content-root');
+  if (SAVE_AS === SAVE_LESSON_AS.PDF) {
+    node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
+  } else {
+    node.style.cssText = 'margin-top: -70px';
+
+    const content = node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.childNodes[0]?.childNodes[0];
+    node?.childNodes[0]?.childNodes[0]?.childNodes[1]?.appendChild(content);
+    node?.childNodes[0]?.childNodes[0]?.childNodes[0]?.remove();
+  }
+
+  // Fetch available language of code snippets
+  const languages = [];
+  const codeContainer = document.getElementsByClassName('code-container');
+  if (codeContainer.length === 0) {
+    return languages;
+  }
+
+  const targetNode = codeContainer[0].previousSibling;
+  if (targetNode?.firstChild) {
+    const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+    languageTabs.forEach((e) => {
+      languages.push(e.querySelector('span').innerText);
+    });
+  }
+
+  return languages;
+}
+
+/**
+ * Save page as PDF.
+ */
 async function savePageAsPDF(page: Page, path: string): Promise<void> {
   await page.emulateMediaType('screen');
   await page.pdf({
@@ -181,12 +195,18 @@ async function savePageAsPDF(page: Page, path: string): Promise<void> {
   });
 }
 
+/**
+ * Save page as MHTML.
+ */
 async function savePageAsMHTML(page: Page, path: string): Promise<void> {
   const cdp = await page.target().createCDPSession();
   const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' }) as any;
   await writeFile(path + '.mhtml', data);
 }
 
+/**
+ * Check if a lesson is already downloaded.
+ */
 async function isAlreadyDownloaded(normalizedTitle: string, language?: string) {
   let path = SAVE_DESTINATION;
 
