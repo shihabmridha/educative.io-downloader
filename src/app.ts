@@ -52,6 +52,22 @@ async function main(): Promise<void> {
 }
 
 /**
+ * Handle unhandled promise rejection
+ */
+process.on('unhandledRejection', (error) => {
+  console.error(error);
+  process.exit(1);
+});
+
+/**
+ * Handle uncaught exception
+ */
+process.on('uncaughtException', (error) => {
+  console.error(error);
+  process.exit(1);
+});
+
+/**
  * Run the main function
  */
 main().catch((e) => {
