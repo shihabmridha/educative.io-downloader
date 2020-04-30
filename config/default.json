@@ -4,5 +4,6 @@
     "loginCheck": true,
     "saveAs": "html",
     "multiLanguage": false,
-    "courseUrl": "https://www.educative.io/courses/docker-for-developers"
+    "courseUrl": "https://www.educative.io/courses/docker-for-developers",
+    "downloadAllCourses": false
 }

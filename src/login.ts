@@ -1,6 +1,6 @@
 import * as config from 'config';
 import { setTimeoutPromise } from './helpers';
-import { HTTP_REQUEST_TIMEOUT } from './globals';
+import { HTTP_REQUEST_TIMEOUT, EDUCATIVE_BASE_URL } from './globals';
 import { getPage, getBrowser } from './browser';
 
 const EMAIL: string = config.get('email');
@@ -20,7 +20,7 @@ export async function isLoggedIn(): Promise<boolean> {
 
   const page = await getPage();
 
-  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
+  await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
   const element = await page.$('.MuiButton-outlined');
   let label: string;
@@ -35,7 +35,7 @@ export async function login(): Promise<void> {
   console.log('Loggin in');
 
   const page = await getPage();
-  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
+  await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
   await page.click('.MuiButton-label');
   await page.type('#loginform-email', EMAIL);
   await page.type('#loginform-password', PASSWORD);
