@@ -1,16 +1,15 @@
 import * as config from 'config';
-import { isLoggedIn, login } from './login';
-import { fetchLessonUrls, downloadPage } from './download';
-import { PageTitleAndLink } from './globals';
 import { getBrowser } from './browser';
+import { downloadPage, fetchLessonUrls } from './download';
+import { PageTitleAndLink, BATCH_SIZE } from './globals';
+import { isLoggedIn, login } from './login';
 
 const COURSE_URL: string = config.get('courseUrl');
 const LOGIN_CHECK: boolean = config.get('loginCheck');
 
 async function main(): Promise<void> {
   if (!COURSE_URL) {
-    console.log('Set course url first.');
-    return;
+    throw new Error('Set course url first.');
   }
 
   console.log(`CHECK IF ALREADY LOGGEDIN: ${LOGIN_CHECK}`);
@@ -27,24 +26,16 @@ async function main(): Promise<void> {
 
   const pageLinks: PageTitleAndLink[] = await fetchLessonUrls(COURSE_URL);
 
-  let i = 1;
-  let promises = [];
-  for (const page of pageLinks) {
+  let pageNumber = 1;
+  while (pageLinks.length) {
     try {
-      if (i % 5 === 0 || i === pageLinks.length) {
-        await Promise.all(promises.map((p) => p));
-        promises = [];
-      }
-
-      promises.push(downloadPage(`${i}.${page.title}`, page.link));
-      i++;
+      await Promise.all(pageLinks.splice(0, BATCH_SIZE).map((page) => {
+        return downloadPage(`${pageNumber++}.${page.title}`, page.link);
+      }));
     } catch (error) {
       console.error(error.message);
     }
   }
-
-  // Wait for pending promises to resolve
-  await Promise.all(promises);
 
   (await getBrowser()).close();
 
