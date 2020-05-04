@@ -1,6 +1,6 @@
 import * as config from 'config';
 import { isDireectoryExists, mkdir, writeFile, isFileExists } from './helpers';
-import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS, AvailableCourses } from './globals';
+import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS, AvailableCourses, BATCH_SIZE } from './globals';
 import { getPage, getSpecialBrowser } from './browser';
 import { Browser, Page } from 'puppeteer';
 
@@ -49,24 +49,16 @@ export async function fetchAllCoursesAvailableToDownload(url: string, cursor: st
 export async function downloadCourse(courseUrl: string) {
   const pageLinks: PageTitleAndLink[] = await fetchLessonUrls(courseUrl);
 
-  let i = 1;
-  let promises = [];
-  for (const page of pageLinks) {
+  let pageNumber = 1;
+  while (pageLinks.length) {
     try {
-      if (i % 5 === 0 || i === pageLinks.length) {
-        await Promise.all(promises.map((p) => p));
-        promises = [];
-      }
-
-      promises.push(downloadPage(`${i}.${page.title}`, page.link));
-      i++;
+      await Promise.all(pageLinks.splice(0, BATCH_SIZE).map((page) => {
+        return downloadPage(`${pageNumber++}.${page.title}`, page.link);
+      }));
     } catch (error) {
       console.error(error.message);
     }
   }
-
-  // Wait for pending promises to resolve
-  await Promise.all(promises);
 }
 
 async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLink[]> {

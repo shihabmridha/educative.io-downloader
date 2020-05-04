@@ -4,7 +4,6 @@ import * as util from 'util';
 export const access = util.promisify(fs.access);
 export const mkdir = util.promisify(fs.mkdir);
 export const writeFile = util.promisify(fs.writeFile);
-export const setTimeoutPromise = util.promisify(setTimeout);
 
 export async function isDireectoryExists(path: string): Promise<boolean> {
   return (await isExists(path));
