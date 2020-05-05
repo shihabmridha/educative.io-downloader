@@ -1,5 +1,5 @@
 import * as config from 'config';
-import { HTTP_REQUEST_TIMEOUT, USER_AGENT } from './globals';
+import { HTTP_REQUEST_TIMEOUT, USER_AGENT, EDUCATIVE_BASE_URL } from './globals';
 import { getPage, getBrowser } from './browser';
 
 const EMAIL: string = config.get('email');
@@ -25,9 +25,9 @@ export async function isLoggedIn(): Promise<boolean> {
 
   const page = await getPage();
 
-  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
+  await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
-  if (page.url() === 'https://www.educative.io/learn') {
+  if (page.url() === `${EDUCATIVE_BASE_URL}/learn`) {
     return true;
   }
 
@@ -53,7 +53,7 @@ export async function login(): Promise<void> {
 
   const page = await getPage();
   await page.setUserAgent(USER_AGENT);
-  await page.goto('https://www.educative.io', { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
+  await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
   const isLoginButtonClicked = await page.evaluate(() => {
     const elements = document.getElementsByClassName('MuiButton-label');
@@ -76,8 +76,8 @@ export async function login(): Promise<void> {
   // Wait for dom to load
   await page.waitFor(2000);
 
-  await page.type('#loginform-email', EMAIL);
-  await page.type('#loginform-password', PASSWORD);
+  await page.type('[name=email]', EMAIL);
+  await page.type('[name=password]', PASSWORD);
 
   await page.click('#modal-login');
 

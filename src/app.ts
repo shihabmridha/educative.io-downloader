@@ -1,15 +1,18 @@
 import * as config from 'config';
-import { getBrowser } from './browser';
-import { downloadPage, fetchLessonUrls } from './download';
-import { PageTitleAndLink, BATCH_SIZE } from './globals';
 import { isLoggedIn, login } from './login';
+import { fetchAllCoursesAvailableToDownload, downloadCourse } from './download';
+import { ALL_COURSES_API, COURSE_URL_PREFIX } from './globals';
+import { getBrowser } from './browser';
 
 const COURSE_URL: string = config.get('courseUrl');
 const LOGIN_CHECK: boolean = config.get('loginCheck');
+const DOWNLOAD_ALL_COURSES: boolean = config.get('downloadAllCourses');
 
 async function main(): Promise<void> {
-  if (!COURSE_URL) {
-    throw new Error('Set course url first.');
+
+  if (!DOWNLOAD_ALL_COURSES && !COURSE_URL) {
+    console.log('Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...');
+    return;
   }
 
   console.log(`CHECK IF ALREADY LOGGEDIN: ${LOGIN_CHECK}`);
@@ -24,17 +27,26 @@ async function main(): Promise<void> {
     }
   }
 
-  const pageLinks: PageTitleAndLink[] = await fetchLessonUrls(COURSE_URL);
+  if (DOWNLOAD_ALL_COURSES) {
+    console.log('Getting all the available courses to download...');
 
-  let pageNumber = 1;
-  while (pageLinks.length) {
-    try {
-      await Promise.all(pageLinks.splice(0, BATCH_SIZE).map((page) => {
-        return downloadPage(`${pageNumber++}.${page.title}`, page.link);
-      }));
-    } catch (error) {
-      console.error(error.message);
+    const courseUrlSlugList = await fetchAllCoursesAvailableToDownload(ALL_COURSES_API);
+
+    if (courseUrlSlugList.length < 1) {
+      console.log('No Courses Available to download.');
+      (await getBrowser()).close();
+      return;
     }
+
+    console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
+
+    console.log(`Downloading all the available courses now.`);
+
+    for (const courseUrlSlug of courseUrlSlugList) {
+      await downloadCourse(COURSE_URL_PREFIX + courseUrlSlug);
+    }
+  } else {
+    await downloadCourse(COURSE_URL);
   }
 
   (await getBrowser()).close();

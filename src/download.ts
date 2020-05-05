@@ -1,18 +1,67 @@
 import * as config from 'config';
 import { isDireectoryExists, mkdir, writeFile, isFileExists } from './helpers';
-import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS } from './globals';
+import { ROOT_PATH, HTTP_REQUEST_TIMEOUT, PageTitleAndLink, SAVE_LESSON_AS, AvailableCourses, BATCH_SIZE } from './globals';
 import { getPage, getSpecialBrowser } from './browser';
 import { Browser, Page } from 'puppeteer';
 
 let SAVE_DESTINATION = '';
 const SAVE_AS: string = config.get('saveAs');
 const MULTI_LANGUAGE: boolean = config.get('multiLanguage');
+const COURSE_URL_SLUG_LIST = [];
 
 const IS_DIRECTORY_CREATED = {};
 
 console.log(`SAVE AS: ${SAVE_AS}`);
 
-export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLink[]> {
+export async function fetchAllCoursesAvailableToDownload(url: string, cursor: string = ''): Promise<string[]> {
+
+  await getSpecialBrowser();
+
+  const page = await getPage();
+
+  await page.goto(url + cursor, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle0' });
+
+  const response = await page.evaluate(() => {
+    return document.querySelector("body").innerText;
+  });
+
+  const availableCourses: AvailableCourses = JSON.parse(response);
+
+  for (const availableCourse of availableCourses.summaries) {
+    if (availableCourse.discounted_price === 0.0 || availableCourse.owned_by_reader) {
+      COURSE_URL_SLUG_LIST.push(availableCourse.course_url_slug);
+    }
+  }
+
+  if (availableCourses.summaries.length > 1) {
+    console.log(`Found ${availableCourses.summaries.length} courses to download on this page.`);
+  } else {
+    console.log(`Found ${availableCourses.summaries.length} course to download on this page.`);
+  }
+
+  if (availableCourses.more) {
+    await fetchAllCoursesAvailableToDownload(url, availableCourses.cursor);
+  }
+
+  return COURSE_URL_SLUG_LIST;
+}
+
+export async function downloadCourse(courseUrl: string) {
+  const pageLinks: PageTitleAndLink[] = await fetchLessonUrls(courseUrl);
+
+  let pageNumber = 1;
+  while (pageLinks.length) {
+    try {
+      await Promise.all(pageLinks.splice(0, BATCH_SIZE).map((page) => {
+        return downloadPage(`${pageNumber++}.${page.title}`, page.link);
+      }));
+    } catch (error) {
+      console.error(error.message);
+    }
+  }
+}
+
+async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLink[]> {
 
   console.log(`Navigating to courses page. URL: ${courseUrl}`);
 
@@ -56,7 +105,7 @@ export async function fetchLessonUrls(courseUrl: string): Promise<PageTitleAndLi
   return pageLinks;
 }
 
-export async function downloadPage(title: string, link: string): Promise<void> {
+async function downloadPage(title: string, link: string): Promise<void> {
   let browser: Browser;
   let page: Page;
 

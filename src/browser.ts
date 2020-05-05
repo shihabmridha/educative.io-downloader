@@ -34,8 +34,12 @@ export async function getSpecialBrowser(): Promise<Browser> {
     args: ['--window-size=1920,0']
   };
 
+  if(isSpecialBrowser) {
+    return browser;
+  }
+
   // If a browser is open but not special then close it
-  if (browser && !isSpecialBrowser) {
+  if (browser) {
     await browser.close();
     browser = undefined;
   }
