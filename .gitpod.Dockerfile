@@ -1,6 +1,6 @@
-FROM gitpod/workspace-full-vnc:latest
+FROM buildkite/puppeteer:latest
 
-USER gitpod
+# USER gitpod
 
 # install dependencies
 RUN npm install -g typescript
