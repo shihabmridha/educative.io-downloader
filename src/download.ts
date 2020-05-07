@@ -212,8 +212,8 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
     for (let j = 0; j < imageTags.length; j++) {
       const imageTag = imageTags[j];
       const blob = await fetch(imageTag.getAttribute('xlink:href')).then(r => r.blob());
-      let dataUrl = await new Promise(resolve => {
-        let reader = new FileReader();
+      const dataUrl = await new Promise(resolve => {
+        const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
