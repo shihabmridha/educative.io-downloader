@@ -1,19 +1,23 @@
-import { launch, Browser, Page } from 'puppeteer';
+import { launch, Browser, Page, LaunchOptions } from 'puppeteer';
 import { ROOT_PATH } from './globals';
 
 let browser: Browser;
 let isSpecialBrowser = false;
 
-async function launchBrowser(args?: object) {
+async function launchBrowser(args?: LaunchOptions) {
   let configuration = {
     userDataDir: ROOT_PATH + '/data',
-    headless: true
+    headless: true,
+    args: ['--no-sandbox']
   };
 
   if (args) {
     configuration = {
       ...configuration,
-      ...args
+      args: [
+        ...configuration.args,
+        ...args.args
+      ]
     };
   }
 
