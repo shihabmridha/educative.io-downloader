@@ -188,17 +188,40 @@ async function downloadPage(title: string, link: string): Promise<void> {
 }
 
 /**
-* We perform 3 major DOM manipulation here.
+* We perform 4 major DOM manipulation here.
 * 1. Expand all the slides.
-* 2. Remove header/sidebar/footer etc. Mostly formatting.
-* 3. Extract available languages of code snippet to download them all in respective folder.
+* 2. As MHTML is unable to load complex svg's, convert svg image in data url, remove unescape characters and then load image.
+* 3. Remove header/sidebar/footer etc. Mostly formatting.
+* 4. Extract available languages of code snippet to download them all in respective folder.
 */
-function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
+async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
   // Expand all slides in the page
   const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
   for (let i = 0; i < xPathResult.snapshotLength; i++) {
     const element = xPathResult.snapshotItem(i) as HTMLElement;
     element.click();
+  }
+
+  // Convert SVG image into Data URL and  also get rid of unescape characters
+  const parentElements = document.getElementsByClassName('canvas-svg-viewmode');
+  for (let i = 0; i < parentElements.length; i++) {
+    const parentElement = parentElements[i];
+    const svgElement = parentElement.getElementsByTagName('svg')[0];
+
+    const imageTags = svgElement.getElementsByTagName('image');
+    for (let j = 0; j < imageTags.length; j++) {
+      const imageTag = imageTags[j];
+      const blob = await fetch(imageTag.getAttribute('xlink:href')).then(r => r.blob());
+      const dataUrl = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      imageTag.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', dataUrl.toString());
+    }
+    const svgString = new XMLSerializer().serializeToString(svgElement);
+    const decoded = unescape(encodeURIComponent(svgString));
+    parentElement.innerHTML = decoded;
   }
 
   // Remove top & left space

@@ -24,7 +24,7 @@ Config file (___config/default.json___) has the following properties.
 - multiLanguage: A lesson can contains code snippets in multiple programming languages. Set this to `true` to download snippets in all available language. Default is `false`.
 - saveAs: Available options: ___`pdf` and `html`___. Default is ___`html`___.
 
-> IMPORTANT: You you save as html it is actually gonna save as mhtml.
+> IMPORTANT: If you save as html it is actually gonna save as mhtml.
 
 
 # TROUBLESHOOT
