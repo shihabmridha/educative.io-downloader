@@ -1,5 +1,5 @@
 import * as config from 'config';
-import { HTTP_REQUEST_TIMEOUT, USER_AGENT, EDUCATIVE_BASE_URL } from './globals';
+import { HTTP_REQUEST_TIMEOUT, EDUCATIVE_BASE_URL } from './globals';
 import { getPage, getBrowser } from './browser';
 
 const EMAIL: string = config.get('email');
@@ -52,7 +52,7 @@ export async function login(): Promise<void> {
   console.log('Loggin in');
 
   const page = await getPage();
-  await page.setUserAgent(USER_AGENT);
+  // await page.setUserAgent(USER_AGENT);
   await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
   const isLoginButtonClicked = await page.evaluate(() => {
@@ -76,8 +76,8 @@ export async function login(): Promise<void> {
   // Wait for dom to load
   await page.waitFor(2000);
 
-  await page.type('[name=email]', EMAIL);
-  await page.type('[name=password]', PASSWORD);
+  await page.type('[name=email]', EMAIL, { delay: 500 });
+  await page.type('[name=password]', PASSWORD, { delay: 500 });
 
   await page.click('#modal-login');
 
