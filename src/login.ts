@@ -70,7 +70,7 @@ export async function login(): Promise<void> {
   });
 
   if (!isLoginButtonClicked) {
-    throw new Error('Could not find login button');
+    throw new Error('Could not find login button (open login form)');
   }
 
   // Wait for dom to load
@@ -79,14 +79,32 @@ export async function login(): Promise<void> {
   await page.type('[name=email]', EMAIL, { delay: 500 });
   await page.type('[name=password]', PASSWORD, { delay: 500 });
 
-  await page.click('#modal-login');
+  const clickLoginBtn = await page.evaluate(() => {
+    const elements = document.getElementsByClassName('MuiButton-label');
 
-  const element = await page.waitForSelector("#alert span", { timeout: 10000 });
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < elements.length; i++) {
+      if (elements[i].innerHTML === 'LOGIN') {
+        (elements[i] as HTMLElement).click();
+        return true;
+      }
+    }
+
+    return false;
+  });
+
+  if (!clickLoginBtn) {
+    throw new Error('Could not find login button (login form submit)');
+  }
+
+  const element = await page.waitForSelector(".b-status-control span", { timeout: 10000 });
   const label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
 
-  if (label && label !== 'Signed in') {
+  if (label && label !== 'Logging in...') {
     throw new Error(label);
   }
+
+  await page.waitForNavigation({ waitUntil: 'networkidle0' }),
 
   await page.close();
 }
