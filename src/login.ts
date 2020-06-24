@@ -1,6 +1,7 @@
 import * as config from 'config';
 import { HTTP_REQUEST_TIMEOUT, EDUCATIVE_BASE_URL } from './globals';
 import { getPage, getBrowser } from './browser';
+import { Page } from 'puppeteer';
 
 const EMAIL: string = config.get('email');
 const PASSWORD: string = config.get('password');
@@ -55,19 +56,7 @@ export async function login(): Promise<void> {
   // await page.setUserAgent(USER_AGENT);
   await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
-  const isLoginButtonClicked = await page.evaluate(() => {
-    const elements = document.getElementsByClassName('MuiButton-label');
-
-    // tslint:disable-next-line: prefer-for-of
-    for (let i = 0; i < elements.length; i++) {
-      if (elements[i].innerHTML === 'Log in') {
-        (elements[i] as HTMLElement).click();
-        return true;
-      }
-    }
-
-    return false;
-  });
+  const isLoginButtonClicked = await clickButton(page, 'MuiButton-label', 'Log in');
 
   if (!isLoginButtonClicked) {
     throw new Error('Could not find login button (open login form)');
@@ -79,32 +68,43 @@ export async function login(): Promise<void> {
   await page.type('[name=email]', EMAIL, { delay: 500 });
   await page.type('[name=password]', PASSWORD, { delay: 500 });
 
-  const clickLoginBtn = await page.evaluate(() => {
-    const elements = document.getElementsByClassName('MuiButton-label');
-
-    // tslint:disable-next-line: prefer-for-of
-    for (let i = 0; i < elements.length; i++) {
-      if (elements[i].innerHTML === 'LOGIN') {
-        (elements[i] as HTMLElement).click();
-        return true;
-      }
-    }
-
-    return false;
-  });
+  const clickLoginBtn = await clickButton(page, 'MuiButton-label', 'LOGIN');
 
   if (!clickLoginBtn) {
     throw new Error('Could not find login button (login form submit)');
   }
 
   const element = await page.waitForSelector(".b-status-control span", { timeout: 10000 });
-  const label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
+  let label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
 
-  if (label && label !== 'Logging in...') {
-    throw new Error(label);
+  if (label === 'Logging in...') {
+    await page.waitForNavigation({ waitUntil: 'networkidle0' });
+    await page.close();
+    return;
   }
 
-  await page.waitForNavigation({ waitUntil: 'networkidle0' }),
+  // If script can't find any specific reason then print unknown error
+  if (!label) {
+    label = 'Unknown error occured';
+  }
 
-  await page.close();
+  throw new Error(label);
+}
+
+async function clickButton(page: Page, className: string, buttonLabel: string): Promise<boolean> {
+  const isClicked = await page.evaluate(({ className, buttonLabel }) => {
+    const elements = document.getElementsByClassName(className);
+
+    // tslint:disable-next-line: prefer-for-of
+    for (let i = 0; i < elements.length; i++) {
+      if (elements[i].innerHTML === buttonLabel) {
+        (elements[i] as HTMLElement).click();
+        return true;
+      }
+    }
+
+    return false;
+  }, { className, buttonLabel });
+
+  return isClicked;
 }

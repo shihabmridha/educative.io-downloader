@@ -204,15 +204,17 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
 
   // Convert SVG image into Data URL and  also get rid of unescape characters
   const parentElements = document.getElementsByClassName('canvas-svg-viewmode');
+  // tslint:disable-next-line: prefer-for-of
   for (let i = 0; i < parentElements.length; i++) {
     const parentElement = parentElements[i];
     const svgElement = parentElement.getElementsByTagName('svg')[0];
 
     const imageTags = svgElement.getElementsByTagName('image');
+    // tslint:disable-next-line: prefer-for-of
     for (let j = 0; j < imageTags.length; j++) {
       const imageTag = imageTags[j];
-      const blob = await fetch(imageTag.getAttribute('xlink:href')).then(r => r.blob());
-      const dataUrl = await new Promise(resolve => {
+      const blob = await fetch(imageTag.getAttribute('xlink:href')).then((r) => r.blob());
+      const dataUrl = await new Promise((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.readAsDataURL(blob);
