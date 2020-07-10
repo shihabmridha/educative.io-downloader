@@ -1,13 +1,13 @@
-import { launch, Browser, Page } from 'puppeteer';
-import { ROOT_PATH } from './globals';
+import { launch, LaunchOptions, Browser, Page } from 'puppeteer';
+import { ROOT_PATH, IS_HEADLESS } from './globals';
 
 let browser: Browser;
 let isSpecialBrowser = false;
 
 async function launchBrowser(args?: object) {
-  let configuration = {
-    userDataDir: ROOT_PATH + '/data',
-    headless: true
+  let configuration: LaunchOptions = {
+    userDataDir: ROOT_PATH + 'data',
+    headless: IS_HEADLESS
   };
 
   if (args) {
@@ -34,7 +34,7 @@ export async function getSpecialBrowser(): Promise<Browser> {
     args: ['--window-size=1920,0']
   };
 
-  if(isSpecialBrowser) {
+  if (isSpecialBrowser) {
     return browser;
   }
 

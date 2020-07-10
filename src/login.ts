@@ -65,8 +65,8 @@ export async function login(): Promise<void> {
   // Wait for dom to load
   await page.waitFor(2000);
 
-  await page.type('[name=email]', EMAIL, { delay: 500 });
-  await page.type('[name=password]', PASSWORD, { delay: 500 });
+  await page.type('[name=email]', EMAIL, { delay: 200 });
+  await page.type('[name=password]', PASSWORD, { delay: 200 });
 
   const clickLoginBtn = await clickButton(page, 'MuiButton-label', 'LOGIN');
 
@@ -78,9 +78,14 @@ export async function login(): Promise<void> {
   let label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
 
   if (label === 'Logging in...') {
-    await page.waitForNavigation({ waitUntil: 'networkidle0' });
-    await page.close();
-    return;
+    try {
+      await page.waitForNavigation({ waitUntil: 'networkidle0' });
+      await page.close();
+      return;
+    } catch (error) {
+      console.log('Could not log in');
+      label = await page.$eval('.b-status-control span', (node) => node.innerHTML);
+    }
   }
 
   // If script can't find any specific reason then print unknown error

@@ -1,3 +1,5 @@
+import * as config from 'config';
+
 export enum SAVE_LESSON_AS {
   PDF = 'pdf',
   HTML = 'html'
@@ -19,6 +21,8 @@ export interface Summary {
   owned_by_reader: boolean;
   course_url_slug: string;
 }
+
+export const IS_HEADLESS: boolean = config.get('headless');
 
 export const EDUCATIVE_BASE_URL: string = 'https://www.educative.io';
 export const ALL_COURSES_API: string = `${EDUCATIVE_BASE_URL}/api/reader/featured/`;
