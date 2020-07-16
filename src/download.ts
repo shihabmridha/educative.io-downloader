@@ -264,9 +264,8 @@ async function savePageAsPDF(page: Page, path: string): Promise<void> {
   await page.pdf({
     path: path + '.pdf',
     printBackground: true,
-    scale:0.8,
     format: 'A4',
-    margin: { top: 50, right: 25, bottom: 50, left: 25, },
+    margin: { top: 0, right: 0, bottom: 0, left: 0, }
   });
 }
 
