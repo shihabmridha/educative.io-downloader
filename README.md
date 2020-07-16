@@ -1,10 +1,12 @@
 # educative.io downloader
 
-> IMPORTANT: You need a subscription to use this.
+## [Support this project using my affiliate link](https://www.educative.io?aff=xkwW)
 
 This tool is to download course from educative.io for later usage. It uses your login credentials and download the course.
 
-> Might not work in WSL
+## IMPORTANT
+- You need a subscription to use this.
+- Might not work in WSL
 
 # Usage
 - Install typescript cli.
@@ -23,6 +25,7 @@ Config file (___config/default.json___) has the following properties.
 - loginCheck: By default, before downloading a course we check if you are already logged in. If you are sure that you are already logged in then you can set this value to ___false___ to skip login check. Recommended value: `true`.
 - multiLanguage: A lesson can contains code snippets in multiple programming languages. Set this to `true` to download snippets in all available language. Default is `false`.
 - saveAs: Available options: ___`pdf` and `html`___. Default is ___`html`___.
+- headless: Browser mode. Default is `false`.
 
 > IMPORTANT: If you save as html it is actually gonna save as mhtml.
 
