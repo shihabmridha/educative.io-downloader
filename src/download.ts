@@ -132,6 +132,9 @@ async function downloadPage(title: string, link: string): Promise<void> {
      */
     const languages = await page.evaluate(pageEvaluation, { SAVE_AS, SAVE_LESSON_AS });
 
+    //click the buttons
+    await page.evaluate(buttonClicks);
+
     /**
      * If lesson has multiple language and user set multiLanguage to true then download all language.
      */
@@ -195,12 +198,6 @@ async function downloadPage(title: string, link: string): Promise<void> {
 * 4. Extract available languages of code snippet to download them all in respective folder.
 */
 async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
-  // Expand all slides in the page
-  const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-  for (let i = 0; i < xPathResult.snapshotLength; i++) {
-    const element = xPathResult.snapshotItem(i) as HTMLElement;
-    element.click();
-  }
 
   // Convert SVG image into Data URL and  also get rid of unescape characters
   const parentElements = document.getElementsByClassName('canvas-svg-viewmode');
@@ -255,6 +252,133 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
 
   return languages;
 }
+
+async function buttonClicks() {
+
+  //Slides :  Expand all slides in the page
+  try {
+    const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0; i < xPathResult.snapshotLength; i++) {
+      const element = xPathResult.snapshotItem(i) as HTMLElement;
+      element.click();
+    }
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
+
+  //IDECode : Click all solutions in IDE code block, copy text and append at end of the page.
+  try {
+
+    let pageContentDiv = document.evaluate('//div[contains(@class, "PageContent-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    let allCodeContent = "";
+    let codeContainerDivs = document.evaluate('//div[contains(@class, "styles__Files-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (let i = 0; i < codeContainerDivs.snapshotLength; i++) {
+      const codeContainer = codeContainerDivs.snapshotItem(i);
+      let codeFileDiv = codeContainer.childNodes;
+      for (let k = 0; k < codeFileDiv.length; k++) {
+        const codeFileLink = codeFileDiv[k] as HTMLDivElement;
+        codeFileLink.click();
+
+        let codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        for (let j = 0; j < codeContent.snapshotLength; j++) {
+          if (i == j) {
+            allCodeContent += '-------------------------------------------------------------------------\n';
+            allCodeContent += '|  ' + codeFileLink.innerText + ' [' + (i + 1) + ']';
+            allCodeContent += '\n-------------------------------------------------------------------------\n\n\n';
+            let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
+            allCodeContent += textBoxContent.innerText;
+            setTimeout(function () {
+              textBoxContent.innerText = "All code files are copied to end of the page..."
+            }, 1);
+            allCodeContent += '\n\n\n';
+          }
+        }
+      }
+      allCodeContent += '\n\n\n**********************************************************************************\n\n\n';
+    }
+
+    if (allCodeContent !== "") {
+      let divToCreate = document.createElement('div');
+      divToCreate.innerHTML = `<br><br><hr>
+                              <h1>Code Files Content !!!<h1>
+                              <hr>
+                              <h2>⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋</h2>
+                              <pre>${allCodeContent}</pre>`;
+      pageContentDiv.snapshotItem(0).appendChild(divToCreate);
+    }
+
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
+
+  //Quiz : Click the slide right button in Quiz and click Check answers buttons at the end.
+  try {
+    while (true) {
+      let slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let i = 0; i < slideRightResult.snapshotLength; i++) {
+        const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
+        slideRightElement.click();
+      }
+
+      if (slideRightResult.snapshotLength == 0) {
+        break;
+      }
+    }
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
+
+
+  //Some useful buttons inside page click.
+  const buttonsToClick = [
+    'Show Hint',
+    'Show Useful Info',
+    'Show Answer',
+    'Need Hint?',
+    'Check Answers',
+    'Privacy Notice',
+    'Product manager',
+    'Project manager',
+    'Software engineer',
+    'Engineering manager',
+    'Answer',
+    'Rubric',
+    'What the interviewer is listening for ',
+    'Self-assessment',
+    'Self-assesment'
+  ];
+
+  buttonsToClick.forEach(buttonText => {
+    try {
+      const buttonTextXpath = document.evaluate('//button[span[text()="' + buttonText + '"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
+        const buttonTextXpathElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
+        buttonTextXpathElement.click();
+      }
+    } catch (error) {
+      console.log("\x1b[31m", error, "\x1b[0m");
+      throw error;
+    }
+  });
+
+  //Solution button click
+  try {
+    const solutionXPath = document.evaluate('//a[span[contains(text(),"Solution")]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0; i < solutionXPath.snapshotLength; i++) {
+      const solutionXPathElement = solutionXPath.snapshotItem(i) as HTMLElement;
+      solutionXPathElement.click();
+    }
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
+
+}
+
 
 /**
  * Save page as PDF.
