@@ -155,12 +155,22 @@ async function downloadPage(title: string, link: string): Promise<void> {
         const path = `${SAVE_DESTINATION}/${language}/${normalizedTitle}`;
 
         await page.evaluate((language) => {
-          const languageTabs = (document.getElementsByClassName('code-container')[0]?.previousSibling?.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-          languageTabs.forEach((e) => {
-            if (e.querySelector('span').innerText === language) {
-              e.querySelector('span').click();
+          const codeContainer = document.getElementsByClassName('code-container');
+          let len = codeContainer.length;
+          while (len > 0) {
+            const targetNode = codeContainer[--len].previousSibling;
+            if (targetNode?.firstChild) {
+              const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+              languageTabs.forEach((e) => {
+                if (e.querySelector('span').innerText === language) {
+                  e.querySelector('span').click();
+                }
+              });
+
+              // Break after switching language
+              break;
             }
-          });
+          }
         }, language);
 
         // waiting 1 seconds just to be sure language has been changed
@@ -242,12 +252,18 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
     return languages;
   }
 
-  const targetNode = codeContainer[0].previousSibling;
-  if (targetNode?.firstChild) {
-    const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-    languageTabs.forEach((e) => {
-      languages.push(e.querySelector('span').innerText);
-    });
+  let len = codeContainer.length;
+  while (len > 0) {
+    const targetNode = codeContainer[--len].previousSibling;
+    if (targetNode?.firstChild) {
+      const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+      languageTabs.forEach((e) => {
+        languages.push(e.querySelector('span').innerText);
+      });
+
+      // Break when language list found.
+      break;
+    }
   }
 
   return languages;
@@ -270,24 +286,24 @@ async function buttonClicks() {
   //IDECode : Click all solutions in IDE code block, copy text and append at end of the page.
   try {
 
-    let pageContentDiv = document.evaluate('//div[contains(@class, "PageContent-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const pageContentDiv = document.evaluate('//div[contains(@class, "PageContent-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
     let allCodeContent = "";
-    let codeContainerDivs = document.evaluate('//div[contains(@class, "styles__Files-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const codeContainerDivs = document.evaluate('//div[contains(@class, "styles__Files-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
     for (let i = 0; i < codeContainerDivs.snapshotLength; i++) {
       const codeContainer = codeContainerDivs.snapshotItem(i);
-      let codeFileDiv = codeContainer.childNodes;
+      const codeFileDiv = codeContainer.childNodes;
       for (let k = 0; k < codeFileDiv.length; k++) {
         const codeFileLink = codeFileDiv[k] as HTMLDivElement;
         codeFileLink.click();
 
-        let codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        const codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
         for (let j = 0; j < codeContent.snapshotLength; j++) {
-          if (i == j) {
+          if (i === j) {
             allCodeContent += '-------------------------------------------------------------------------\n';
             allCodeContent += '|  ' + codeFileLink.innerText + ' [' + (i + 1) + ']';
             allCodeContent += '\n-------------------------------------------------------------------------\n\n\n';
-            let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
+            const textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
             allCodeContent += textBoxContent.innerText;
             setTimeout(function () {
               textBoxContent.innerText = "All code files are copied to end of the page..."
@@ -300,7 +316,7 @@ async function buttonClicks() {
     }
 
     if (allCodeContent !== "") {
-      let divToCreate = document.createElement('div');
+      const divToCreate = document.createElement('div');
       divToCreate.innerHTML = `<br><br><hr>
                               <h1>Code Files Content !!!<h1>
                               <hr>
@@ -317,13 +333,13 @@ async function buttonClicks() {
   //Quiz : Click the slide right button in Quiz and click Check answers buttons at the end.
   try {
     while (true) {
-      let slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      const slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < slideRightResult.snapshotLength; i++) {
         const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
         slideRightElement.click();
       }
 
-      if (slideRightResult.snapshotLength == 0) {
+      if (slideRightResult.snapshotLength === 0) {
         break;
       }
     }
@@ -331,7 +347,6 @@ async function buttonClicks() {
     console.log("\x1b[31m", error, "\x1b[0m");
     throw error;
   }
-
 
   //Some useful buttons inside page click.
   const buttonsToClick = [
@@ -352,7 +367,7 @@ async function buttonClicks() {
     'Self-assesment'
   ];
 
-  buttonsToClick.forEach(buttonText => {
+  buttonsToClick.forEach((buttonText) => {
     try {
       const buttonTextXpath = document.evaluate('//button[span[text()="' + buttonText + '"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
@@ -378,7 +393,6 @@ async function buttonClicks() {
   }
 
 }
-
 
 /**
  * Save page as PDF.
