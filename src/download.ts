@@ -392,7 +392,7 @@ async function buttonClicks() {
 
   try {
     const solutionBoxDivs = document.evaluate('//div[contains(@class, "styles__Output-sc")]/div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    const copyButton = document.evaluate('//button[contains(@class, "Widget__CopyButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const copyButton = document.evaluate('//div[contains(@class, "styles__Buttons_Wrapper")]/button[contains(@class, "Widget__CopyButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
     for (let i = 0; i < solutionBoxDivs.snapshotLength; i++) {
       for (let j = 0; j < copyButton.snapshotLength; j++) {
