@@ -255,6 +255,10 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
 
 async function buttonClicks() {
 
+  function waitFor(delay) {
+    return new Promise(resolve => setTimeout(resolve, delay));
+  }
+
   //Slides :  Expand all slides in the page
   try {
     const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
@@ -269,46 +273,47 @@ async function buttonClicks() {
 
   //IDECode : Click all solutions in IDE code block, copy text and append at end of the page.
   try {
+    const codeContainerDivs = document.evaluate('//div[contains(@class, "Widget__FilesList")]/div[contains(@class, "styles__Files")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-    let pageContentDiv = document.evaluate('//div[contains(@class, "PageContent-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    let allCodeContent = "";
-    let codeContainerDivs = document.evaluate('//div[contains(@class, "styles__Files-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const widgetMultiFilesDiv = document.evaluate('//div[contains(@class, "code-container")]/div[contains(@class, "Widget__MultiFiles")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
     for (let i = 0; i < codeContainerDivs.snapshotLength; i++) {
+
       const codeContainer = codeContainerDivs.snapshotItem(i);
-      let codeFileDiv = codeContainer.childNodes;
+      const codeFileDiv = codeContainer.childNodes;
+
       for (let k = 0; k < codeFileDiv.length; k++) {
+
         const codeFileLink = codeFileDiv[k] as HTMLDivElement;
         codeFileLink.click();
 
-        let codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+        const codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
         for (let j = 0; j < codeContent.snapshotLength; j++) {
           if (i == j) {
-            allCodeContent += '-------------------------------------------------------------------------\n';
-            allCodeContent += '|  ' + codeFileLink.innerText + ' [' + (i + 1) + ']';
-            allCodeContent += '\n-------------------------------------------------------------------------\n\n\n';
+
+            let allCodeContent = "";
+            allCodeContent += '\n---------------------------------------------------------------------------------------------------\n';
+            allCodeContent +=  codeFileLink.innerText;
+            allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
+
             let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
             allCodeContent += textBoxContent.innerText;
+
             setTimeout(function () {
-              textBoxContent.innerText = "All code files are copied to end of the page..."
+              textBoxContent.innerText = "All code files are copied below..."
             }, 1);
-            allCodeContent += '\n\n\n';
+
+            const createCodeElement = document.createElement("PRE");
+            createCodeElement.innerHTML = `<pre style="width: 100%;">${allCodeContent}</pre>`;
+
+            const parentOfWidgetMultiFiles = widgetMultiFilesDiv.snapshotItem(i) as HTMLElement;
+            parentOfWidgetMultiFiles.appendChild(createCodeElement);
           }
         }
+
       }
-      allCodeContent += '\n\n\n**********************************************************************************\n\n\n';
     }
-
-    if (allCodeContent !== "") {
-      let divToCreate = document.createElement('div');
-      divToCreate.innerHTML = `<br><br><hr>
-                              <h1>Code Files Content !!!<h1>
-                              <hr>
-                              <h2>⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋	⤋</h2>
-                              <pre>${allCodeContent}</pre>`;
-      pageContentDiv.snapshotItem(0).appendChild(divToCreate);
-    }
-
   } catch (error) {
     console.log("\x1b[31m", error, "\x1b[0m");
     throw error;
@@ -365,18 +370,54 @@ async function buttonClicks() {
     }
   });
 
-  //Solution button click
+  //Show Solution Button Click
   try {
-    const solutionXPath = document.evaluate('//a[span[contains(text(),"Solution")]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    for (let i = 0; i < solutionXPath.snapshotLength; i++) {
-      const solutionXPathElement = solutionXPath.snapshotItem(i) as HTMLElement;
-      solutionXPathElement.click();
+
+    const showSolutionXPath = document.evaluate('//button[span[text()="Show Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0; i < showSolutionXPath.snapshotLength; i++) {
+      const showSolutionElement = showSolutionXPath.snapshotItem(i) as HTMLElement;
+      showSolutionElement.click();
+      const noJustShowXPath = document.evaluate('//span[text()="No, just show the solution"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let j = 0; j < noJustShowXPath.snapshotLength; j++) {
+        const noJustShowElement = noJustShowXPath.snapshotItem(j) as HTMLElement;
+        noJustShowElement.click();
+        await waitFor(1000);
+      }
     }
+
   } catch (error) {
     console.log("\x1b[31m", error, "\x1b[0m");
     throw error;
   }
 
+  try {
+    const solutionBoxDivs = document.evaluate('//div[contains(@class, "styles__Output-sc")]/div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const copyButton = document.evaluate('//button[contains(@class, "Widget__CopyButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (let i = 0; i < solutionBoxDivs.snapshotLength; i++) {
+      for (let j = 0; j < copyButton.snapshotLength; j++) {
+        if (i == j) {
+          const clickCopy = copyButton.snapshotItem(j) as HTMLElement;
+          clickCopy.click();
+
+          let readTextFromClipboard = await navigator.clipboard.readText();
+          let solutionBoxDiv = solutionBoxDivs.snapshotItem(i) as HTMLDivElement;
+          let parentNode = solutionBoxDiv.parentNode;
+          solutionBoxDiv.remove();
+          let allCodeContent = readTextFromClipboard;
+          if (allCodeContent !== "") {
+            let divToCreate = document.createElement('div');
+            divToCreate.innerHTML = `<hr><pre>${allCodeContent}</pre>`;
+            parentNode.appendChild(divToCreate);
+          }
+        }
+      }
+    }
+
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
 }
 
 
