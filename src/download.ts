@@ -157,12 +157,22 @@ async function downloadPage(title: string, link: string): Promise<void> {
         const path = `${SAVE_DESTINATION}/${language}/${normalizedTitle}`;
 
         await page.evaluate((language) => {
-          const languageTabs = (document.getElementsByClassName('code-container')[0]?.previousSibling?.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-          languageTabs.forEach((e) => {
-            if (e.querySelector('span').innerText === language) {
-              e.querySelector('span').click();
+          const codeContainer = document.getElementsByClassName('code-container');
+          let len = codeContainer.length;
+          while (len > 0) {
+            const targetNode = codeContainer[--len].previousSibling;
+            if (targetNode?.firstChild) {
+              const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+              languageTabs.forEach((e) => {
+                if (e.querySelector('span').innerText === language) {
+                  e.querySelector('span').click();
+                }
+              });
+
+              // Break after switching language
+              break;
             }
-          });
+          }
         }, language);
 
         // waiting 1 seconds just to be sure language has been changed
@@ -244,12 +254,18 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
     return languages;
   }
 
-  const targetNode = codeContainer[0].previousSibling;
-  if (targetNode?.firstChild) {
-    const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
-    languageTabs.forEach((e) => {
-      languages.push(e.querySelector('span').innerText);
-    });
+  let len = codeContainer.length;
+  while (len > 0) {
+    const targetNode = codeContainer[--len].previousSibling;
+    if (targetNode?.firstChild) {
+      const languageTabs = (targetNode.firstChild as HTMLElement).querySelectorAll('span.desktop-only');
+      languageTabs.forEach((e) => {
+        languages.push(e.querySelector('span').innerText);
+      });
+
+      // Break when language list found.
+      break;
+    }
   }
 
   return languages;
@@ -300,6 +316,7 @@ async function buttonClicks() {
             allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
 
             let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
+
             allCodeContent += textBoxContent.innerText;
 
             setTimeout(function () {
@@ -314,7 +331,6 @@ async function buttonClicks() {
             parentOfWidgetMultiFiles.appendChild(createCodeElement);
           }
         }
-
       }
     }
   } catch (error) {
@@ -340,7 +356,7 @@ async function buttonClicks() {
     'Self-assesment'
   ];
 
-  buttonsToClick.forEach(buttonText => {
+  buttonsToClick.forEach((buttonText) => {
     try {
       const buttonTextXpath = document.evaluate('//button[span[text()="' + buttonText + '"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
@@ -522,7 +538,6 @@ async function buttonClicks() {
     throw error;
   }
 }
-
 
 /**
  * Save page as PDF.
