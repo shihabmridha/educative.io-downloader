@@ -156,7 +156,7 @@ async function downloadPage(title: string, link: string): Promise<void> {
 
         const path = `${SAVE_DESTINATION}/${language}/${normalizedTitle}`;
 
-        await page.evaluate((language) => {
+        await page.evaluate(async (language) => {
           const codeContainer = document.getElementsByClassName('code-container');
           let len = codeContainer.length;
           while (len > 0) {
@@ -169,10 +169,94 @@ async function downloadPage(title: string, link: string): Promise<void> {
                 }
               });
 
+              const hideSol = document.evaluate('//button[span[text()="Hide Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+              for (let i = 0; i < hideSol.snapshotLength; i++) {
+                const hideEle = hideSol.snapshotItem(i) as HTMLElement;
+                hideEle.click();
+              }
+
+              await waitFor(1000);
               // Break after switching language
               break;
             }
           }
+
+          function waitFor(delay) {
+            return new Promise(resolve => setTimeout(resolve, delay));
+          }
+
+          //Show Solution Button Click
+          try {
+
+            const showSolutionXPath = document.evaluate('//button[span[text()="Show Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+            for (let i = 0; i < showSolutionXPath.snapshotLength; i++) {
+              const showSolutionElement = showSolutionXPath.snapshotItem(i) as HTMLElement;
+              showSolutionElement.click();
+              const noJustShowXPath = document.evaluate('//span[text()="No, just show the solution"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+              for (let j = 0; j < noJustShowXPath.snapshotLength; j++) {
+                const noJustShowElement = noJustShowXPath.snapshotItem(j) as HTMLElement;
+                noJustShowElement.click();
+                await waitFor(1000);
+              }
+            }
+
+          } catch (error) {
+            console.log("\x1b[31m", error, "\x1b[0m");
+            throw error;
+          }
+
+          const correctSolutionStyle = document.querySelectorAll('[class*="styles__Caption-sc"]');
+
+          for (let i = 0; i < correctSolutionStyle.length; i++) {
+            correctSolutionStyle[i].className = '';
+          }
+
+          //Monaco Content
+          try {
+
+            const monacoEditorContainer = document.evaluate('//div[contains(@class, "monaco-editor")]/ancestor::div[contains(@class, "styles__CodeEditorStyled")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+            //Add custom class to div surrounding. So that we can handle easily in for loop.
+            for (let i = 0; i < monacoEditorContainer.snapshotLength; i++) {
+              const addClass = monacoEditorContainer.snapshotItem(i).parentNode as HTMLElement
+              addClass.className = 'rale' + i;
+            }
+
+            const raleDivs = document.evaluate('//div[contains(@class, "rale")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+            for (let i = 0; i < raleDivs.snapshotLength; i++) {
+
+              const linesContent = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]/descendant::div[contains(@class, "lines-content")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+              const raleWithCodeEditor = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+              if (linesContent.snapshotLength > 0) {
+                let allCodeContent = "";
+
+                let textBoxContent = linesContent.snapshotItem(0) as HTMLDivElement;
+                if (textBoxContent != null) {
+                  allCodeContent += textBoxContent.innerText;
+                }
+
+                const createCodeElement = document.createElement("PRE");
+                createCodeElement.style.cssText = 'width:100%;';
+                createCodeElement.innerHTML = allCodeContent;
+
+                const parentOfWidgetMultiFiles = raleDivs.snapshotItem(i) as HTMLElement;
+                parentOfWidgetMultiFiles.appendChild(createCodeElement);
+
+                const needToRemove = raleWithCodeEditor.snapshotItem(0) as HTMLElement;
+                needToRemove.remove();
+
+              }
+            }
+
+          } catch (error) {
+            console.log("\x1b[31m\n\n", error, "\x1b[0m");
+            throw error;
+          }
+
         }, language);
 
         // waiting 1 seconds just to be sure language has been changed
@@ -272,10 +356,6 @@ async function pageEvaluation({ SAVE_AS, SAVE_LESSON_AS }) {
 }
 
 async function buttonClicks() {
-
-  function waitFor(delay) {
-    return new Promise(resolve => setTimeout(resolve, delay));
-  }
 
   //Slides :  Expand all slides in the page
   try {
@@ -403,10 +483,6 @@ async function buttonClicks() {
         const codeFileLink = kale.snapshotItem(k) as HTMLElement;
         codeFileLink.click();
 
-        if (k == 0) {
-          continue;
-        }
-
         const devdWithCodeContainer = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::div[contains(@class, "code-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
         let allCodeContent = "";
@@ -432,77 +508,6 @@ async function buttonClicks() {
       }
 
     }
-  } catch (error) {
-    console.log("\x1b[31m\n\n", error, "\x1b[0m");
-    throw error;
-  }
-
-  //Show Solution Button Click
-  try {
-
-    const showSolutionXPath = document.evaluate('//button[span[text()="Show Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    for (let i = 0; i < showSolutionXPath.snapshotLength; i++) {
-      const showSolutionElement = showSolutionXPath.snapshotItem(i) as HTMLElement;
-      showSolutionElement.click();
-      const noJustShowXPath = document.evaluate('//span[text()="No, just show the solution"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      for (let j = 0; j < noJustShowXPath.snapshotLength; j++) {
-        const noJustShowElement = noJustShowXPath.snapshotItem(j) as HTMLElement;
-        noJustShowElement.click();
-        await waitFor(1000);
-      }
-    }
-
-  } catch (error) {
-    console.log("\x1b[31m", error, "\x1b[0m");
-    throw error;
-  }
-
-  const correctSolutionStyle = document.querySelectorAll('[class*="styles__Caption-sc"]');
-
-  for (let i = 0; i < correctSolutionStyle.length; i++) {
-    correctSolutionStyle[i].className = '';
-  }
-
-  //Monaco Content
-  try {
-
-    const monacoEditorContainer = document.evaluate('//div[contains(@class, "monaco-editor")]/ancestor::div[contains(@class, "styles__CodeEditorStyled")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    //Add custom class to div surrounding. So that we can handle easily in for loop.
-    for (let i = 0; i < monacoEditorContainer.snapshotLength; i++) {
-      const addClass = monacoEditorContainer.snapshotItem(i).parentNode as HTMLElement
-      addClass.className = 'rale' + i;
-    }
-
-    const raleDivs = document.evaluate('//div[contains(@class, "rale")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-    for (let i = 0; i < raleDivs.snapshotLength; i++) {
-
-      const linesContent = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]/descendant::div[contains(@class, "lines-content")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-      const raleWithCodeEditor = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-
-      if (linesContent.snapshotLength > 0) {
-        let allCodeContent = "";
-
-        let textBoxContent = linesContent.snapshotItem(0) as HTMLDivElement;
-        if (textBoxContent != null) {
-          allCodeContent += textBoxContent.innerText;
-        }
-
-        const createCodeElement = document.createElement("PRE");
-        createCodeElement.style.cssText = 'width:100%;';
-        createCodeElement.innerHTML = allCodeContent;
-
-        const parentOfWidgetMultiFiles = raleDivs.snapshotItem(i) as HTMLElement;
-        parentOfWidgetMultiFiles.appendChild(createCodeElement);
-
-        const needToRemove = raleWithCodeEditor.snapshotItem(0) as HTMLElement;
-        needToRemove.remove();
-
-      }
-    }
-
   } catch (error) {
     console.log("\x1b[31m\n\n", error, "\x1b[0m");
     throw error;
