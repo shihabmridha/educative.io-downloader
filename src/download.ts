@@ -126,6 +126,8 @@ async function downloadPage(title: string, link: string): Promise<void> {
 
     await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
 
+    await page.addStyleTag({ content: 'div[class^="styles__CodeEditorStyled-sc"]{ height: 5000px !important; }' });
+    await page.addStyleTag({ content: 'div[class^="PageContent"]{ max-width: 1200px !important; }' });
     /**
      * The callback function passed to evaluate is actually executed in the browser.
      * This is why we have to pass local variables explicitly in the second parameter.
@@ -294,7 +296,7 @@ async function buttonClicks() {
 
             let allCodeContent = "";
             allCodeContent += '\n---------------------------------------------------------------------------------------------------\n';
-            allCodeContent +=  codeFileLink.innerText;
+            allCodeContent += codeFileLink.innerText;
             allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
 
             let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
@@ -305,7 +307,8 @@ async function buttonClicks() {
             }, 1);
 
             const createCodeElement = document.createElement("PRE");
-            createCodeElement.innerHTML = `<pre style="width: 100%;">${allCodeContent}</pre>`;
+            createCodeElement.style.cssText = 'width:100%;';
+            createCodeElement.innerHTML = allCodeContent;
 
             const parentOfWidgetMultiFiles = widgetMultiFilesDiv.snapshotItem(i) as HTMLElement;
             parentOfWidgetMultiFiles.appendChild(createCodeElement);
@@ -319,32 +322,12 @@ async function buttonClicks() {
     throw error;
   }
 
-  //Quiz : Click the slide right button in Quiz and click Check answers buttons at the end.
-  try {
-    while (true) {
-      let slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-      for (let i = 0; i < slideRightResult.snapshotLength; i++) {
-        const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
-        slideRightElement.click();
-      }
-
-      if (slideRightResult.snapshotLength == 0) {
-        break;
-      }
-    }
-  } catch (error) {
-    console.log("\x1b[31m", error, "\x1b[0m");
-    throw error;
-  }
-
-
   //Some useful buttons inside page click.
   const buttonsToClick = [
     'Show Hint',
     'Show Useful Info',
     'Show Answer',
     'Need Hint?',
-    'Check Answers',
     'Privacy Notice',
     'Product manager',
     'Project manager',
@@ -370,6 +353,74 @@ async function buttonClicks() {
     }
   });
 
+  //Show Explanation button click
+  try {
+    const buttonTextXpath = document.evaluate('//h4[text()="Show Explanation"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
+      const showSolutionElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
+      showSolutionElement.click();
+    }
+  } catch (error) {
+    console.log("\x1b[31m\n\n", error, "\x1b[0m");
+    throw error;
+  }
+
+  //FOR UL Links Code.
+  try {
+
+    let codeTabLinks = document.evaluate('//div[contains(@class, "styles__ViewerComponentViewStyled")]/descendant::ul[contains(@class, "styles__TabNav")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    //Add custom class to div surrounding. So that we can handle easily in for loop.
+    for (let i = 0; i < codeTabLinks.snapshotLength; i++) {
+      const addClass = codeTabLinks.snapshotItem(i).parentNode.parentNode as HTMLElement
+      addClass.className = 'devd' + i;
+    }
+
+    const devdDivs = document.evaluate('//div[contains(@class, "devd")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (let i = 0; i < devdDivs.snapshotLength; i++) {
+
+      let kale = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::span[contains(@class, "styles__DesktopOnly-sc")]/descendant::span[contains(@class, "styles__TabTitle-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+      for (let k = 0; k < kale.snapshotLength; k++) {
+
+        const codeFileLink = kale.snapshotItem(k) as HTMLElement;
+        codeFileLink.click();
+
+        if (k == 0) {
+          continue;
+        }
+
+        const devdWithCodeContainer = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::div[contains(@class, "code-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+        let allCodeContent = "";
+        allCodeContent += '\n---------------------------------------------------------------------------------------------------\n';
+        allCodeContent += codeFileLink.innerText;
+        allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
+
+        let textBoxContent = devdWithCodeContainer.snapshotItem(0) as HTMLDivElement;
+        allCodeContent += textBoxContent.innerText;
+
+        const createCodeElement = document.createElement("PRE");
+        createCodeElement.style.cssText = 'width:100%;';
+        createCodeElement.innerHTML = allCodeContent;
+
+        const parentOfWidgetMultiFiles = devdDivs.snapshotItem(i) as HTMLElement;
+        parentOfWidgetMultiFiles.appendChild(createCodeElement);
+
+      }
+
+      if (kale.snapshotLength > 0) {
+        const codeFileLink = kale.snapshotItem(0) as HTMLElement;
+        codeFileLink.click();
+      }
+
+    }
+  } catch (error) {
+    console.log("\x1b[31m\n\n", error, "\x1b[0m");
+    throw error;
+  }
+
   //Show Solution Button Click
   try {
 
@@ -390,30 +441,82 @@ async function buttonClicks() {
     throw error;
   }
 
+  const correctSolutionStyle = document.querySelectorAll('[class*="styles__Caption-sc"]');
+
+  for (let i = 0; i < correctSolutionStyle.length; i++) {
+    correctSolutionStyle[i].className = '';
+  }
+
+  //Monaco Content
   try {
-    const solutionBoxDivs = document.evaluate('//div[contains(@class, "styles__Output-sc")]/div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
-    const copyButton = document.evaluate('//div[contains(@class, "styles__Buttons_Wrapper")]/button[contains(@class, "Widget__CopyButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-    for (let i = 0; i < solutionBoxDivs.snapshotLength; i++) {
-      for (let j = 0; j < copyButton.snapshotLength; j++) {
-        if (i == j) {
-          const clickCopy = copyButton.snapshotItem(j) as HTMLElement;
-          clickCopy.click();
+    const monacoEditorContainer = document.evaluate('//div[contains(@class, "monaco-editor")]/ancestor::div[contains(@class, "styles__CodeEditorStyled")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-          let readTextFromClipboard = await navigator.clipboard.readText();
-          let solutionBoxDiv = solutionBoxDivs.snapshotItem(i) as HTMLDivElement;
-          let parentNode = solutionBoxDiv.parentNode;
-          solutionBoxDiv.remove();
-          let allCodeContent = readTextFromClipboard;
-          if (allCodeContent !== "") {
-            let divToCreate = document.createElement('div');
-            divToCreate.innerHTML = `<hr><pre>${allCodeContent}</pre>`;
-            parentNode.appendChild(divToCreate);
-          }
+    //Add custom class to div surrounding. So that we can handle easily in for loop.
+    for (let i = 0; i < monacoEditorContainer.snapshotLength; i++) {
+      const addClass = monacoEditorContainer.snapshotItem(i).parentNode as HTMLElement
+      addClass.className = 'rale' + i;
+    }
+
+    const raleDivs = document.evaluate('//div[contains(@class, "rale")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+    for (let i = 0; i < raleDivs.snapshotLength; i++) {
+
+      const linesContent = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]/descendant::div[contains(@class, "lines-content")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+      const raleWithCodeEditor = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+
+      if (linesContent.snapshotLength > 0) {
+        let allCodeContent = "";
+
+        let textBoxContent = linesContent.snapshotItem(0) as HTMLDivElement;
+        if (textBoxContent != null) {
+          allCodeContent += textBoxContent.innerText;
         }
+
+        const createCodeElement = document.createElement("PRE");
+        createCodeElement.style.cssText = 'width:100%;';
+        createCodeElement.innerHTML = allCodeContent;
+
+        const parentOfWidgetMultiFiles = raleDivs.snapshotItem(i) as HTMLElement;
+        parentOfWidgetMultiFiles.appendChild(createCodeElement);
+
+        const needToRemove = raleWithCodeEditor.snapshotItem(0) as HTMLElement;
+        needToRemove.remove();
+
       }
     }
 
+  } catch (error) {
+    console.log("\x1b[31m\n\n", error, "\x1b[0m");
+    throw error;
+  }
+
+  //Quiz : Click the slide right button in Quiz and click Check answers buttons at the end.
+  try {
+    while (true) {
+      let slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      for (let i = 0; i < slideRightResult.snapshotLength; i++) {
+        const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
+        slideRightElement.click();
+      }
+
+      if (slideRightResult.snapshotLength == 0) {
+        break;
+      }
+    }
+  } catch (error) {
+    console.log("\x1b[31m", error, "\x1b[0m");
+    throw error;
+  }
+
+  //Check Answers in Quiz
+  try {
+    const buttonTextXpath = document.evaluate('//button[span[text()="Check Answers"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
+      const buttonTextXpathElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
+      buttonTextXpathElement.click();
+    }
   } catch (error) {
     console.log("\x1b[31m", error, "\x1b[0m");
     throw error;

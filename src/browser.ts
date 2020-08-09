@@ -49,8 +49,6 @@ export async function getSpecialBrowser(): Promise<Browser> {
   }
 
   isSpecialBrowser = true;
-  const context = browser.defaultBrowserContext();
-  context.overridePermissions('https://www.educative.io/', ['clipboard-read']);
   return browser;
 }
 
