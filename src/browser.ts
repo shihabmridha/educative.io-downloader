@@ -49,7 +49,6 @@ export async function getSpecialBrowser(): Promise<Browser> {
   }
 
   isSpecialBrowser = true;
-
   return browser;
 }
 
