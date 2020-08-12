@@ -1,6 +1,7 @@
 import * as config from 'config';
-import { HTTP_REQUEST_TIMEOUT, USER_AGENT, EDUCATIVE_BASE_URL } from './globals';
+import { HTTP_REQUEST_TIMEOUT, EDUCATIVE_BASE_URL } from './globals';
 import { getPage, getBrowser } from './browser';
+import { Page } from 'puppeteer';
 
 const EMAIL: string = config.get('email');
 const PASSWORD: string = config.get('password');
@@ -52,41 +53,63 @@ export async function login(): Promise<void> {
   console.log('Loggin in');
 
   const page = await getPage();
-  await page.setUserAgent(USER_AGENT);
+  // await page.setUserAgent(USER_AGENT);
   await page.goto(EDUCATIVE_BASE_URL, { timeout: HTTP_REQUEST_TIMEOUT, waitUntil: 'networkidle2' });
 
-  const isLoginButtonClicked = await page.evaluate(() => {
-    const elements = document.getElementsByClassName('MuiButton-label');
+  const isLoginButtonClicked = await clickButton(page, 'MuiButton-label', 'Log in');
+
+  if (!isLoginButtonClicked) {
+    throw new Error('Could not find login button (open login form)');
+  }
+
+  // Wait for dom to load
+  await page.waitFor(2000);
+
+  await page.type('[name=email]', EMAIL, { delay: 200 });
+  await page.type('[name=password]', PASSWORD, { delay: 200 });
+
+  const clickLoginBtn = await clickButton(page, 'MuiButton-label', 'LOGIN');
+
+  if (!clickLoginBtn) {
+    throw new Error('Could not find login button (login form submit)');
+  }
+
+  const element = await page.waitForSelector(".b-status-control span", { timeout: 10000 });
+  let label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
+
+  if (label === 'Logging in...') {
+    try {
+      await page.waitForNavigation({ waitUntil: 'networkidle0' });
+      await page.close();
+      return;
+    } catch (error) {
+      console.log('Could not log in');
+      label = await page.$eval('.b-status-control span', (node) => node.innerHTML);
+    }
+  }
+
+  // If script can't find any specific reason then print unknown error
+  if (!label) {
+    label = 'Unknown error occured';
+  }
+
+  throw new Error(label);
+}
+
+async function clickButton(page: Page, className: string, buttonLabel: string): Promise<boolean> {
+  const isClicked = await page.evaluate(({ className, buttonLabel }) => {
+    const elements = document.getElementsByClassName(className);
 
     // tslint:disable-next-line: prefer-for-of
     for (let i = 0; i < elements.length; i++) {
-      if (elements[i].innerHTML === 'Log in') {
+      if (elements[i].innerHTML === buttonLabel) {
         (elements[i] as HTMLElement).click();
         return true;
       }
     }
 
     return false;
-  });
+  }, { className, buttonLabel });
 
-  if (!isLoginButtonClicked) {
-    throw new Error('Could not find login button');
-  }
-
-  // Wait for dom to load
-  await page.waitFor(2000);
-
-  await page.type('[name=email]', EMAIL);
-  await page.type('[name=password]', PASSWORD);
-
-  await page.click('#modal-login');
-
-  const element = await page.waitForSelector("#alert span", { timeout: 10000 });
-  const label = await page.evaluate((el: HTMLSpanElement) => el.innerText, element);
-
-  if (label && label !== 'Signed in') {
-    throw new Error(label);
-  }
-
-  await page.close();
+  return isClicked;
 }

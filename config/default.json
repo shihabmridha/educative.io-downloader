@@ -4,6 +4,7 @@
     "loginCheck": true,
     "saveAs": "html",
     "multiLanguage": false,
-    "courseUrl": "https://www.educative.io/courses/docker-for-developers",
+    "headless": true,
+    "courseUrl": "https://www.educative.io/courses/grokking-the-behavioral-interview",
     "downloadAllCourses": false
 }
