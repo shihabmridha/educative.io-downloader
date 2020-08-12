@@ -182,8 +182,8 @@ async function downloadPage(title: string, link: string): Promise<void> {
             }
           }
 
-          function waitFor(delay) {
-            return new Promise(resolve => setTimeout(resolve, delay));
+          function waitFor(delay: number) {
+            return new Promise((resolve) => setTimeout(resolve, delay));
           }
 
           //Show Solution Button Click
@@ -208,18 +208,17 @@ async function downloadPage(title: string, link: string): Promise<void> {
 
           const correctSolutionStyle = document.querySelectorAll('[class*="styles__Caption-sc"]');
 
-          for (let i = 0; i < correctSolutionStyle.length; i++) {
-            correctSolutionStyle[i].className = '';
-          }
+          correctSolutionStyle.forEach((item) => {
+            item.className = '';
+          });
 
           //Monaco Content
           try {
-
             const monacoEditorContainer = document.evaluate('//div[contains(@class, "monaco-editor")]/ancestor::div[contains(@class, "styles__CodeEditorStyled")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
             //Add custom class to div surrounding. So that we can handle easily in for loop.
             for (let i = 0; i < monacoEditorContainer.snapshotLength; i++) {
-              const addClass = monacoEditorContainer.snapshotItem(i).parentNode as HTMLElement
+              const addClass = monacoEditorContainer.snapshotItem(i).parentNode as HTMLElement;
               addClass.className = 'rale' + i;
             }
 
@@ -234,8 +233,8 @@ async function downloadPage(title: string, link: string): Promise<void> {
               if (linesContent.snapshotLength > 0) {
                 let allCodeContent = "";
 
-                let textBoxContent = linesContent.snapshotItem(0) as HTMLDivElement;
-                if (textBoxContent != null) {
+                const textBoxContent = linesContent.snapshotItem(0) as HTMLDivElement;
+                if (textBoxContent !== null) {
                   allCodeContent += textBoxContent.innerText;
                 }
 
@@ -379,28 +378,26 @@ async function buttonClicks() {
 
       const codeContainer = codeContainerDivs.snapshotItem(i);
       const codeFileDiv = codeContainer.childNodes;
-
-      for (let k = 0; k < codeFileDiv.length; k++) {
-
-        const codeFileLink = codeFileDiv[k] as HTMLDivElement;
+      codeFileDiv.forEach((item) => {
+        const codeFileLink = item as HTMLDivElement;
         codeFileLink.click();
 
         const codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
         for (let j = 0; j < codeContent.snapshotLength; j++) {
-          if (i == j) {
+          if (i === j) {
 
             let allCodeContent = "";
             allCodeContent += '\n---------------------------------------------------------------------------------------------------\n';
             allCodeContent += codeFileLink.innerText;
             allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
 
-            let textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
+            const textBoxContent = codeContent.snapshotItem(j) as HTMLDivElement;
 
             allCodeContent += textBoxContent.innerText;
 
             setTimeout(function () {
-              textBoxContent.innerText = "All code files are copied below..."
+              textBoxContent.innerText = "All code files are copied below...";
             }, 1);
 
             const createCodeElement = document.createElement("PRE");
@@ -411,7 +408,7 @@ async function buttonClicks() {
             parentOfWidgetMultiFiles.appendChild(createCodeElement);
           }
         }
-      }
+      });
     }
   } catch (error) {
     console.log("\x1b[31m", error, "\x1b[0m");
@@ -464,11 +461,11 @@ async function buttonClicks() {
   //FOR UL Links Code.
   try {
 
-    let codeTabLinks = document.evaluate('//div[contains(@class, "styles__ViewerComponentViewStyled")]/descendant::ul[contains(@class, "styles__TabNav")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+    const codeTabLinks = document.evaluate('//div[contains(@class, "styles__ViewerComponentViewStyled")]/descendant::ul[contains(@class, "styles__TabNav")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
     //Add custom class to div surrounding. So that we can handle easily in for loop.
     for (let i = 0; i < codeTabLinks.snapshotLength; i++) {
-      const addClass = codeTabLinks.snapshotItem(i).parentNode.parentNode as HTMLElement
+      const addClass = codeTabLinks.snapshotItem(i).parentNode.parentNode as HTMLElement;
       addClass.className = 'devd' + i;
     }
 
@@ -476,7 +473,7 @@ async function buttonClicks() {
 
     for (let i = 0; i < devdDivs.snapshotLength; i++) {
 
-      let kale = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::span[contains(@class, "styles__DesktopOnly-sc")]/descendant::span[contains(@class, "styles__TabTitle-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      const kale = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::span[contains(@class, "styles__DesktopOnly-sc")]/descendant::span[contains(@class, "styles__TabTitle-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
       for (let k = 0; k < kale.snapshotLength; k++) {
 
@@ -490,7 +487,7 @@ async function buttonClicks() {
         allCodeContent += codeFileLink.innerText;
         allCodeContent += '\n---------------------------------------------------------------------------------------------------\n\n';
 
-        let textBoxContent = devdWithCodeContainer.snapshotItem(0) as HTMLDivElement;
+        const textBoxContent = devdWithCodeContainer.snapshotItem(0) as HTMLDivElement;
         allCodeContent += textBoxContent.innerText;
 
         const createCodeElement = document.createElement("PRE");
@@ -516,13 +513,13 @@ async function buttonClicks() {
   //Quiz : Click the slide right button in Quiz and click Check answers buttons at the end.
   try {
     while (true) {
-      let slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+      const slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
       for (let i = 0; i < slideRightResult.snapshotLength; i++) {
         const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
         slideRightElement.click();
       }
 
-      if (slideRightResult.snapshotLength == 0) {
+      if (slideRightResult.snapshotLength === 0) {
         break;
       }
     }
