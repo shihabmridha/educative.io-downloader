@@ -64,3 +64,11 @@ export async function getPage(): Promise<Page> {
 
   return page;
 }
+
+export async function closeBrowser(): Promise<void> {
+  if (!browser) {
+    throw new Error('No browser initialted yet');
+  }
+
+  await browser.close();
+}
