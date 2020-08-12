@@ -13,7 +13,10 @@ async function launchBrowser(args?: object) {
   if (args) {
     configuration = {
       ...configuration,
-      ...args
+      args: [
+        ...configuration.args,
+        ...args.args
+      ]
     };
   }
 
