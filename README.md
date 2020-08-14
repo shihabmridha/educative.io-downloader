@@ -1,14 +1,19 @@
-# educative.io downloader
+# Educative Downloader
 
-## [Support this project using my affiliate link](https://www.educative.io?aff=xkwW)
+## [😍 SUPPORT](https://www.educative.io?aff=xkwW)
+ Help maintaning this project by showing your support. Use **[this affiliate link](https://www.educative.io?aff=xkwW)** for future purchase.
 
-This tool is to download course from educative.io for later usage. It uses your login credentials and download the course.
+## [🤩 10% ADDITIONAL DISCOUNT](https://anotherdev.xyz/#subscribe)
+Get 10% additional discount on Educative Subscription. As an affiliate I get special discount code for my audience. **[Subscribe](https://anotherdev.xyz/#subscribe)** to my email list for discount code.
 
-## IMPORTANT
+## ✉️ Description
+This tool is to download course from [educative.io](https://www.educative.io?aff=xkwW) for later usage. It uses your login credentials and download the course.
+
+## 🧯 IMPORTANT
 - You need a subscription to use this.
 - Might not work in WSL
 
-# Usage
+## 💡 Usage
 - Install typescript cli.
 - Clone the project and navigate into it.
 - `npm install` to install dependencies.
@@ -18,7 +23,7 @@ This tool is to download course from educative.io for later usage. It uses your 
 
 > IMPORTANT: If you make changes to the code, make sure to compile it.
 
-# CONFIG
+## ⚙️ CONFIG
 Config file (___config/default.json___) has the following properties.
 - email: Your subscription email.
 - password: Your subscription password.
@@ -30,7 +35,7 @@ Config file (___config/default.json___) has the following properties.
 > IMPORTANT: If you save as html it is actually gonna save as mhtml.
 
 
-# TROUBLESHOOT
+## 🛠 TROUBLESHOOT
 
 **NAVIGATION TIMEOUT (Or, some other timeout)?**
 - Open globals.ts and increase the value of `HTTP_REQUEST_TIMEOUT`. Default is 30000ms.
@@ -45,5 +50,3 @@ Config file (___config/default.json___) has the following properties.
 
 **SOMETHING IS WRONG?**
 - Remove `data` directory. Chrome driver stores session/cookies etc in that directory.
-
-**I have created this for my own usage. You might find a lot of issues. Feel free to create a PR.**
