@@ -1,13 +1,5 @@
-# Educative Downloader
-
-## [😍 SUPPORT](https://www.educative.io?aff=xkwW)
- Help maintaning this project by showing your support. Use **[this affiliate link](https://www.educative.io?aff=xkwW)** for future purchase.
-
-## [🤩 10% ADDITIONAL DISCOUNT](https://anotherdev.xyz/#subscribe)
-Get 10% additional discount on Educative Subscription. As an affiliate I get special discount code for my audience. **[Subscribe](https://anotherdev.xyz/#subscribe)** to my email list for discount code.
-
 ## ✉️ Description
-This tool is to download course from [educative.io](https://www.educative.io?aff=xkwW) for later usage. It uses your login credentials and download the course.
+This tool is to download course from for later usage. It uses your login credentials and download the course.
 
 ## 🧯 IMPORTANT
 - You need a subscription to use this.
