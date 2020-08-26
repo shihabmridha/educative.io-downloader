@@ -1,6 +1,11 @@
 ## ✉️ Description
 This tool is to download course from for later usage. It uses your login credentials and download the course.
 
+## [😍 Support!](https://opencollective.com/educativeio-downloader)
+<a href="https://opencollective.com/educativeio-downloader" target="_blank"><img src="https://images.opencollective.com/static/images/become_sponsor.svg"></a>
+
+[Donate](https://opencollective.com/educativeio-downloader) via Open Collective to keep the project alive.
+
 ## 🧯 IMPORTANT
 - You need a subscription to use this.
 - Might not work in WSL
