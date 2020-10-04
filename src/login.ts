@@ -68,7 +68,7 @@ export async function login(): Promise<void> {
   await page.type('[name=email]', EMAIL, { delay: 200 });
   await page.type('[name=password]', PASSWORD, { delay: 200 });
 
-  const clickLoginBtn = await clickButton(page, 'MuiButton-label', 'LOGIN');
+  const clickLoginBtn = await clickButton(page, 'MuiButton-label', 'Login');
 
   if (!clickLoginBtn) {
     throw new Error('Could not find login button (login form submit)');
