@@ -1,53 +1,35 @@
-import * as config from 'config';
-import { isLoggedIn, login } from './login';
-import { fetchAllCoursesAvailableToDownload, downloadCourse } from './download';
-import { ALL_COURSES_API, COURSE_URL_PREFIX } from './globals';
-import { getBrowser, closeBrowser } from './browser';
-
-const COURSE_URL: string = config.get('courseUrl');
-const LOGIN_CHECK: boolean = config.get('loginCheck');
-const DOWNLOAD_ALL_COURSES: boolean = config.get('downloadAllCourses');
+import { performLogin } from './login';
+import downloader from './download';
+import browser from './browser';
+import config from './configuration';
 
 async function main(): Promise<void> {
+  await performLogin();
 
-  if (!DOWNLOAD_ALL_COURSES && !COURSE_URL) {
-    console.log('Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...');
-    return;
-  }
+  await downloader.downloadCourse(config.userConfig.courseUrl);
+  // if (config.userConfig.downloadAll) {
+  //   console.log('Getting all the available courses to download...');
 
-  console.log(`CHECK IF ALREADY LOGGEDIN: ${LOGIN_CHECK}`);
 
-  if (LOGIN_CHECK) {
-    const loggedIn = await isLoggedIn();
+    // const allCourseApiUrl = config.apiUrl + '/api/reader/featured';
+    // const courseUrlSlugList = await getDownloadableCourses(allCourseApiUrl);
 
-    if (!loggedIn) {
-      await login();
-    } else {
-      console.log('Already logged in');
-    }
-  }
+  //   if (courseUrlSlugList.length < 1) {
+  //     console.log('No Courses Available to download.');
+  //     (await browser.get()).close();
+  //     return;
+  //   }
 
-  if (DOWNLOAD_ALL_COURSES) {
-    console.log('Getting all the available courses to download...');
+  //   console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
 
-    const courseUrlSlugList = await fetchAllCoursesAvailableToDownload(ALL_COURSES_API);
+  //   console.log('Downloading all the available courses now.');
 
-    if (courseUrlSlugList.length < 1) {
-      console.log('No Courses Available to download.');
-      (await getBrowser()).close();
-      return;
-    }
-
-    console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
-
-    console.log(`Downloading all the available courses now.`);
-
-    for (const courseUrlSlug of courseUrlSlugList) {
-      await downloadCourse(COURSE_URL_PREFIX + courseUrlSlug);
-    }
-  } else {
-    await downloadCourse(COURSE_URL);
-  }
+  //   for (const courseUrlSlug of courseUrlSlugList) {
+  //     await downloadCourse(`${config.courseUrlPrefix}/${courseUrlSlug}`);
+  //   }
+  // } else {
+  //   await downloadCourse(config.userConfig.courseUrl);
+  // }
 }
 
 /**
@@ -55,9 +37,7 @@ async function main(): Promise<void> {
  */
 process.on('unhandledRejection', async (error) => {
   console.error(error);
-
-  // Close browser
-  await closeBrowser();
+  await browser.close();
 
   process.exit(1);
 });
@@ -67,9 +47,7 @@ process.on('unhandledRejection', async (error) => {
  */
 process.on('uncaughtException', async (error) => {
   console.error(error);
-
-  // Close browser
-  await closeBrowser();
+  await browser.close();
 
   process.exit(1);
 });
@@ -78,15 +56,13 @@ process.on('uncaughtException', async (error) => {
  * Run the main function
  */
 main()
-.then(async () => {
-  console.log('=> Done');
-  await closeBrowser();
-})
-.catch(async (e) => {
-  console.error(e.message);
+  .then(async () => {
+    console.log('=> Done');
+    await browser.close();
+  })
+  .catch(async (e) => {
+    console.error(e.message);
+    await browser.close();
 
-  // Close browser
-  await closeBrowser();
-
-  process.exit(1);
-});
+    process.exit(1);
+  });

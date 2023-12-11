@@ -1,10 +1,10 @@
 {
     "email": "example@gmail.com",
     "password": "yourPassword",
-    "loginCheck": true,
+    "skipLogin": true,
     "saveAs": "html",
     "multiLanguage": false,
-    "headless": true,
+    "headless": false,
     "courseUrl": "https://www.educative.io/courses/grokking-the-behavioral-interview",
-    "downloadAllCourses": false
+    "downloadAll": false
 }
