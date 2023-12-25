@@ -55,7 +55,8 @@ export class Download {
       // Hoping that PageDown would scroll to the end of the page and will render any lazy loaded component
       await tab.page.keyboard.press("End");
 
-      await waitFor(1000);
+      // Make sure to render the lazy loaded component (it does not guaranteed though)
+      await waitFor(3000);
 
       await tab.page.evaluate(() => {
         // Show solution to exercise
@@ -113,15 +114,14 @@ export class Download {
     await this._browser.makeSpecial();
 
     const tab = await this._browser.getTab();
-    const page = tab.page;
 
     const courseDetailApiUrl = this.buildCourseDetailApiUrl(courseSlug);
     const [response] = await Promise.all([
-      page.waitForResponse(courseDetailApiUrl, { timeout: this._config.httpTimeout }),
+      fetch(courseDetailApiUrl),
       tab.goTo({ url })
     ]);
 
-    if (response.status() !== 200) {
+    if (response.status !== 200) {
       console.error('Failed to get course information');
       return;
     }
