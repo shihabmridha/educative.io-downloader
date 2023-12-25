@@ -5,8 +5,9 @@ Help maintaning this project by showing your support. Use **[this affiliate link
 This tool is to download course from for later usage. It uses your login credentials and download the course.
 
 ## 🧯 IMPORTANT
+- A bunch of things are not working (image is not loaded, full code snippet not captured, not multi-language support etc).
 - You need a subscription to use this.
-- Might not work in WSL
+- Might not work in WSL.
 
 # Prerequisite
 - Node.js (tested version: 20.10.0)
