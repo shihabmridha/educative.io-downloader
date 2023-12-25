@@ -1,29 +1,21 @@
 import { readFileSync } from "fs";
 import { UserConfig } from "./types";
 
-class Configuration {
-  private static _instance: Configuration;
+export class Configuration {
   private readonly _baseUrl = 'https://www.educative.io';
   private readonly _apiUrl = this._baseUrl + '/api';
   private readonly _courseUrlPrefix = this._baseUrl + '/courses';
   private readonly _batchSize = 1;
   private readonly _httpTimeout = 30000;
+  private readonly _userConfig: UserConfig;
 
-  private _userConfig: UserConfig;
-
-  private constructor() {
+  constructor() {
     const data = readFileSync(`${this.rootDir}/config/default.json`, 'utf-8');
     this._userConfig = JSON.parse(data);
-  }
 
-  public static Instance() {
-    const instance = this._instance || (this._instance = new this());
-
-    if (!instance.userConfig.downloadAll && !instance.userConfig.courseUrl) {
+    if (!this.userConfig.downloadAll && !this.userConfig.courseUrl) {
       throw new Error('Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...');
     }
-
-    return instance;
   }
 
   public get rootDir() {
@@ -60,5 +52,3 @@ class Configuration {
     return this._httpTimeout;
   }
 }
-
-export default Configuration.Instance();

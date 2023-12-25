@@ -1,68 +1,79 @@
-import { performLogin } from './login';
-import downloader from './download';
-import browser from './browser';
-import config from './configuration';
+import { Configuration } from './configuration';
+import { Authentication } from './login';
+import { ChromeBrowser } from './browser';
+import { Download } from './download';
 
-async function main(): Promise<void> {
-  await performLogin();
+class Application {
+  private readonly _config: Configuration;
+  private readonly _browser: ChromeBrowser;
+  private readonly _download: Download;
+  private readonly _auth: Authentication;
 
-  await downloader.downloadCourse(config.userConfig.courseUrl);
-  // if (config.userConfig.downloadAll) {
-  //   console.log('Getting all the available courses to download...');
+  public constructor() {
+    this._config = new Configuration();
+    this._browser = ChromeBrowser.Instance(this._config);
+
+    this._auth = new Authentication(this._config, this._browser);
+    this._download = new Download(this._config, this._browser);
+
+    process.on('unhandledRejection', this.uncaughtExceptionHandler);
+    process.on('uncaughtException', this.uncaughtExceptionHandler);
+  }
+
+  public async run() {
+    try {
+      await this._auth.authenticate();
+      await this._download.course();
+
+      console.log('=> Done');
+    } catch (error) {
+      console.error(error);
+    }
+
+    await this._browser.close();
+    this.gracefulExit();
+
+    // if (config.userConfig.downloadAll) {
+    //   console.log('Getting all the available courses to download...');
 
 
     // const allCourseApiUrl = config.apiUrl + '/api/reader/featured';
     // const courseUrlSlugList = await getDownloadableCourses(allCourseApiUrl);
 
-  //   if (courseUrlSlugList.length < 1) {
-  //     console.log('No Courses Available to download.');
-  //     (await browser.get()).close();
-  //     return;
-  //   }
+    //   if (courseUrlSlugList.length < 1) {
+    //     console.log('No Courses Available to download.');
+    //     (await browser.get()).close();
+    //     return;
+    //   }
 
-  //   console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
+    //   console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
 
-  //   console.log('Downloading all the available courses now.');
+    //   console.log('Downloading all the available courses now.');
 
-  //   for (const courseUrlSlug of courseUrlSlugList) {
-  //     await downloadCourse(`${config.courseUrlPrefix}/${courseUrlSlug}`);
-  //   }
-  // } else {
-  //   await downloadCourse(config.userConfig.courseUrl);
-  // }
+    //   for (const courseUrlSlug of courseUrlSlugList) {
+    //     await downloadCourse(`${config.courseUrlPrefix}/${courseUrlSlug}`);
+    //   }
+    // } else {
+    //   await downloadCourse(config.userConfig.courseUrl);
+    // }
+  }
+
+  private uncaughtExceptionHandler(error: Error) {
+    console.error(error);
+
+    this._browser.close()
+      .finally(() => {
+        this.gracefulExit();
+      });
+  }
+
+  private gracefulExit() {
+    process.exit(1);
+  }
 }
-
-/**
- * Handle unhandled promise rejection
- */
-process.on('unhandledRejection', async (error) => {
-  console.error(error);
-  await browser.close();
-
-  process.exit(1);
-});
-
-/**
- * Handle uncaught exception
- */
-process.on('uncaughtException', async (error) => {
-  console.error(error);
-  await browser.close();
-
-  process.exit(1);
-});
 
 /**
  * Run the main function
  */
-main()
-  .then(async () => {
-    console.log('=> Done');
-    await browser.close();
-  })
-  .catch(async (e) => {
-    console.error(e.message);
-    await browser.close();
-
-    process.exit(1);
-  });
+const app = new Application();
+app.run();

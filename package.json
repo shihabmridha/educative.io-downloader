@@ -17,7 +17,6 @@
   },
   "scripts": {
     "start": "cross-env NODE_PATH=. node build/src/app.js",
-    "dev": "nodemon build/src/app.js",
     "compile": "tsc -p .",
     "compile:watch": "tsc -w"
   },

@@ -1,27 +1,23 @@
 import { mkdir } from 'node:fs/promises';
 import { mkdirSync } from 'node:fs';
-import config from './configuration';
-import browser, { BrowserTab, ChromeBrowser } from './browser';
-import { CourseMeta, PageTitleAndLink, SaveAs } from './types';
+import { BrowserTab, ChromeBrowser } from './browser';
+import { CourseMeta, PageTitleAndLink } from './types';
 import { isExists, isExistsSync, waitFor } from './utils';
+import { Configuration } from './configuration';
 
-// let SAVE_DESTINATION = '';
-// const SAVE_AS: string = config.userConfig.saveAs;
-// const MULTI_LANGUAGE: boolean = config.userConfig.multiLanguage;
-// const COURSE_URL_SLUG_LIST = [];
-// const IS_DIRECTORY_EXISTS = {};
-
-class Downloader {
-  private static _instance: Downloader;
-  private readonly _downloadsDirectoryPath = `${config.rootDir}/downloads`;
-  private readonly _saveAs: SaveAs;
-  private readonly _multiLanguage: boolean;
+export class Download {
+  private readonly _config: Configuration;
+  private readonly _browser: ChromeBrowser;
+  private readonly _downloadsDirectoryPath: string;
   private _courseDownloadPath: string;
-  private _existingDirectories: Set<string>;
-  private _browser: ChromeBrowser;
+  // private readonly _saveAs: SaveAs;
+  // private readonly _multiLanguage: boolean;
+  // private _existingDirectories: Set<string>;
 
-  private constructor(browser: ChromeBrowser) {
+  constructor(config: Configuration, browser: ChromeBrowser) {
     this._browser = browser;
+    this._config = config;
+    this._downloadsDirectoryPath = `${this._config.rootDir}/downloads`;
 
     if (!isExistsSync(this._downloadsDirectoryPath)) {
       mkdirSync(this._downloadsDirectoryPath);
@@ -30,12 +26,8 @@ class Downloader {
     console.log(`Saving as: ${config.userConfig.saveAs}`);
   }
 
-  public static Instance(browser: ChromeBrowser) {
-    return this._instance || (this._instance = new this(browser));
-  }
-
   private buildCourseDetailApiUrl(slug: string) {
-    return `${config.apiUrl}/collection/${slug}?work_type=collection`;
+    return `${this._config.apiUrl}/collection/${slug}?work_type=collection`;
   }
 
   private async createCourseDirectory(title: string) {
@@ -66,6 +58,14 @@ class Downloader {
       await waitFor(1000);
 
       await tab.page.evaluate(() => {
+        // Show solution to exercise
+        document.querySelectorAll('span').forEach(e => {
+          if (e.innerHTML === 'Show Solution') e.click();
+        });
+        document.querySelectorAll('button').forEach(e => {
+          if (e.innerHTML === 'No, just show the solution') e.click();
+        });
+
         // Hide header
         document.querySelectorAll('nav.sticky')
           .forEach(e => (e as HTMLElement).style.display = 'none');
@@ -90,6 +90,10 @@ class Downloader {
         // Hide table of content if any
         if (document.querySelector('[data-testid="toc-wrap"]'))
           (document.querySelector('[data-testid="toc-wrap"]') as HTMLElement).style.display = 'none';
+
+        // Hide modal if there is any (sometimes a modal appears)
+        if (document.querySelector('#NEW_MODAL'))
+          (document.querySelector('#NEW_MODAL') as HTMLElement).style.display = 'none';
       });
 
       await tab.savePage(`${this._courseDownloadPath}/${pageNumber}.${normalizedTitle}`);
@@ -102,17 +106,18 @@ class Downloader {
     await tab.close();
   }
 
-  async downloadCourse(url: string) {
+  async course() {
+    const url = this._config.userConfig.courseUrl;
     console.log(`Navigating to courses page. URL: ${url}`);
     const courseSlug = url.split('/').pop();
-    await browser.makeSpecial();
+    await this._browser.makeSpecial();
 
-    const tab = await browser.getTab();
+    const tab = await this._browser.getTab();
     const page = tab.page;
 
     const courseDetailApiUrl = this.buildCourseDetailApiUrl(courseSlug);
     const [response] = await Promise.all([
-      page.waitForResponse(courseDetailApiUrl, { timeout: config.httpTimeout }),
+      page.waitForResponse(courseDetailApiUrl, { timeout: this._config.httpTimeout }),
       tab.goTo({ url })
     ]);
 
@@ -143,7 +148,7 @@ class Downloader {
 
       return {
         title,
-        link: `${config.baseUrl}/courses/${courseSlug}/${slug}`,
+        link: `${this._config.baseUrl}/courses/${courseSlug}/${slug}`,
       } as PageTitleAndLink;
     });
 
@@ -156,7 +161,7 @@ class Downloader {
     let pageNumber = 1;
     while (pageLinks.length > 0) {
       try {
-        await Promise.all(pageLinks.splice(0, config.batchSize)
+        await Promise.all(pageLinks.splice(0, this._config.batchSize)
           .map((pageLink) => this.downloadPage(pageLink, pageNumber++)));
       } catch (error) {
         console.error(error.message);
@@ -164,8 +169,6 @@ class Downloader {
     }
   }
 }
-
-export default Downloader.Instance(browser);
 
 // export async function getDownloadableCourses(url: string, cursor: string = ''): Promise<string[]> {
 //   await browser.makeSpecial();
