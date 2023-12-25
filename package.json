@@ -1,22 +1,24 @@
 {
   "name": "educative.io-downloader",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Download course from educative.io",
-  "main": "app.js",
+  "main": "build/app.js",
   "dependencies": {
-    "config": "^3.2.4",
-    "puppeteer": "^2.0.0"
+    "puppeteer": "^21.5.2"
   },
   "devDependencies": {
-    "@types/node": "^13.1.7",
-    "@types/puppeteer": "^2.0.0",
-    "@types/config": "^0.0.36"
+    "@types/config": "^3.3.3",
+    "@types/node": "^20.10.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.2",
+    "@typescript-eslint/parser": "^6.13.2",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.55.0",
+    "typescript": "^5.3.2"
   },
   "scripts": {
-    "start": "node build/src/app.js",
-    "dev": "nodemon build/src/app.js",
+    "start": "cross-env NODE_PATH=. node build/src/app.js",
     "compile": "tsc -p .",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile:watch": "tsc -w"
   },
   "author": "Shihab Mridha",
   "license": "ISC"

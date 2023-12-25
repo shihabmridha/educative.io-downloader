@@ -14,7 +14,10 @@
             "skipFiles": [
                 "${workspaceFolder}/node_modules/**/*.js",
                 "<node_internals>/**"
-            ]
+            ],
+            "env": {
+                "NODE_PATH": "."
+            }
         },
     ]
 }

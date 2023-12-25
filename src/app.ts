@@ -1,92 +1,79 @@
-import * as config from 'config';
-import { isLoggedIn, login } from './login';
-import { fetchAllCoursesAvailableToDownload, downloadCourse } from './download';
-import { ALL_COURSES_API, COURSE_URL_PREFIX } from './globals';
-import { getBrowser, closeBrowser } from './browser';
+import { Configuration } from './configuration';
+import { Authentication } from './login';
+import { ChromeBrowser } from './browser';
+import { Download } from './download';
 
-const COURSE_URL: string = config.get('courseUrl');
-const LOGIN_CHECK: boolean = config.get('loginCheck');
-const DOWNLOAD_ALL_COURSES: boolean = config.get('downloadAllCourses');
+class Application {
+  private readonly _config: Configuration;
+  private readonly _browser: ChromeBrowser;
+  private readonly _download: Download;
+  private readonly _auth: Authentication;
 
-async function main(): Promise<void> {
+  public constructor() {
+    this._config = new Configuration();
+    this._browser = ChromeBrowser.Instance(this._config);
 
-  if (!DOWNLOAD_ALL_COURSES && !COURSE_URL) {
-    console.log('Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...');
-    return;
+    this._auth = new Authentication(this._config, this._browser);
+    this._download = new Download(this._config, this._browser);
+
+    process.on('unhandledRejection', this.uncaughtExceptionHandler);
+    process.on('uncaughtException', this.uncaughtExceptionHandler);
   }
 
-  console.log(`CHECK IF ALREADY LOGGEDIN: ${LOGIN_CHECK}`);
+  public async run() {
+    try {
+      await this._auth.authenticate();
+      await this._download.course();
 
-  if (LOGIN_CHECK) {
-    const loggedIn = await isLoggedIn();
-
-    if (!loggedIn) {
-      await login();
-    } else {
-      console.log('Already logged in');
+      console.log('=> Done');
+    } catch (error) {
+      console.error(error);
     }
+
+    await this._browser.close();
+    this.gracefulExit();
+
+    // if (config.userConfig.downloadAll) {
+    //   console.log('Getting all the available courses to download...');
+
+
+    // const allCourseApiUrl = config.apiUrl + '/api/reader/featured';
+    // const courseUrlSlugList = await getDownloadableCourses(allCourseApiUrl);
+
+    //   if (courseUrlSlugList.length < 1) {
+    //     console.log('No Courses Available to download.');
+    //     (await browser.get()).close();
+    //     return;
+    //   }
+
+    //   console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
+
+    //   console.log('Downloading all the available courses now.');
+
+    //   for (const courseUrlSlug of courseUrlSlugList) {
+    //     await downloadCourse(`${config.courseUrlPrefix}/${courseUrlSlug}`);
+    //   }
+    // } else {
+    //   await downloadCourse(config.userConfig.courseUrl);
+    // }
   }
 
-  if (DOWNLOAD_ALL_COURSES) {
-    console.log('Getting all the available courses to download...');
+  private uncaughtExceptionHandler(error: Error) {
+    console.error(error);
 
-    const courseUrlSlugList = await fetchAllCoursesAvailableToDownload(ALL_COURSES_API);
+    this._browser.close()
+      .finally(() => {
+        this.gracefulExit();
+      });
+  }
 
-    if (courseUrlSlugList.length < 1) {
-      console.log('No Courses Available to download.');
-      (await getBrowser()).close();
-      return;
-    }
-
-    console.log(`Found a total of ${courseUrlSlugList.length} courses to download.`);
-
-    console.log(`Downloading all the available courses now.`);
-
-    for (const courseUrlSlug of courseUrlSlugList) {
-      await downloadCourse(COURSE_URL_PREFIX + courseUrlSlug);
-    }
-  } else {
-    await downloadCourse(COURSE_URL);
+  private gracefulExit() {
+    process.exit(1);
   }
 }
 
 /**
- * Handle unhandled promise rejection
- */
-process.on('unhandledRejection', async (error) => {
-  console.error(error);
-
-  // Close browser
-  await closeBrowser();
-
-  process.exit(1);
-});
-
-/**
- * Handle uncaught exception
- */
-process.on('uncaughtException', async (error) => {
-  console.error(error);
-
-  // Close browser
-  await closeBrowser();
-
-  process.exit(1);
-});
-
-/**
  * Run the main function
  */
-main()
-.then(async () => {
-  console.log('=> Done');
-  await closeBrowser();
-})
-.catch(async (e) => {
-  console.error(e.message);
-
-  // Close browser
-  await closeBrowser();
-
-  process.exit(1);
-});
+const app = new Application();
+app.run();
