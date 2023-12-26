@@ -67,6 +67,14 @@ export class Download {
           if (e.innerHTML === 'No, just show the solution') e.click();
         });
 
+        // Show quiz answer
+        document.querySelectorAll('span').forEach(e => {
+          if (e.innerHTML === 'Show Answer') e.click();
+        });
+
+        // Show all slides
+        document.querySelectorAll('[aria-label="view all slides"]').forEach(e => e.parentElement.click());
+
         // Hide header
         document.querySelectorAll('nav.sticky')
           .forEach(e => (e as HTMLElement).style.display = 'none');
