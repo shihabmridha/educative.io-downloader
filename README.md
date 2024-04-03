@@ -5,27 +5,23 @@ Help maintaning this project by showing your support. Use **[this affiliate link
 This tool is to download course from for later usage. It uses your login credentials and download the course.
 
 ## 🧯 IMPORTANT
-- A bunch of things are not working (image is not loaded, full code snippet not captured, not multi-language support etc).
+- A bunch of things are not working (image does not load sometimes, full code snippet not captured, not multi-language support etc).
 - You need a subscription to use this.
-- Might not work in WSL.
 
 # Prerequisite
-- Node.js (tested version: 20.10.0)
-- PNPM package manager
+- Bun (v1.1.0)
 
 ## 💡 Usage
 - Clone the project and navigate into it.
-- `pnpm install` to install dependencies.
+- `bun install` to install dependencies.
 - Open ___config/default.json___ file to set configurations. (Email, Password, Course URL).
-- `pnpm compile` to compile typescript.
-- `pnpm start` to start download.
-
-> IMPORTANT: If you make changes to the code, make sure to compile it.
+- `bun start` to start download.
 
 ## ⚙️ CONFIG
 Config file (___config/default.json___) has the following properties.
 - email: Your subscription email.
 - password: Your subscription password.
+- courseUrl: The course you wanna download.
 - skipLogin: By default, before downloading a course we check if you are already logged in. If you are sure that you are already logged in then you can set this value to ___false___ to skip login check.
 - multiLanguage: A lesson can contains code snippets in multiple programming languages. Set this to `true` to download snippets in all available language. Default is `false`.
 - saveAs: Available options: ___`pdf` and `html`___. Default is ___`html`___.
