@@ -78,10 +78,18 @@ export class Authentication {
       const require2fa = (body.errorText as string).includes('two-factor');
 
       if (require2fa) {
+        console.log('2FA required. Check your email for the code and input it.');
+
         await page.waitForFunction(async () => {
           await new Promise(resolve => setTimeout(resolve, 2000));
-          const otp = document.querySelector('input[name=two_factor_code]') as HTMLInputElement;
-          return otp.value.length === 6;
+
+          let allFilled = true;
+          document.querySelectorAll('[data-testid="otp-input-box"]').forEach((e) => {
+            if ((e as HTMLInputElement).value === '')
+              allFilled = false;
+          });
+
+          return allFilled;
         });
 
         await page.click('button[type="submit"]');

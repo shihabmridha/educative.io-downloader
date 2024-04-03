@@ -18,6 +18,7 @@ export class Download {
     this._browser = browser;
     this._config = config;
     this._downloadsDirectoryPath = `${this._config.rootDir}/downloads`;
+    this._courseDownloadPath = '';
 
     if (!isExistsSync(this._downloadsDirectoryPath)) {
       mkdirSync(this._downloadsDirectoryPath);
@@ -41,7 +42,7 @@ export class Download {
 
   private async downloadPage(linkWithTitle: PageTitleAndLink, pageNumber: number) {
     const { title, link } = linkWithTitle;
-    let tab: BrowserTab;
+    let tab: BrowserTab | null = null;
     try {
       const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
@@ -73,7 +74,7 @@ export class Download {
         });
 
         // Show all slides
-        document.querySelectorAll('[aria-label="view all slides"]').forEach(e => e.parentElement.click());
+        document.querySelectorAll('[aria-label="view all slides"]').forEach(e => e.parentElement?.click());
 
         // Hide header
         document.querySelectorAll('nav.sticky')
@@ -85,7 +86,7 @@ export class Download {
 
         // Hide top-right sticky buttons & right-bottom floating buttons
         document.getElementById('view-collection-article-content-root')
-          .querySelectorAll('.fixed')
+          ?.querySelectorAll('.fixed')
           .forEach(e => (e as HTMLElement).style.display = 'none');
 
         // Hide bottom navigation buttons
@@ -109,16 +110,16 @@ export class Download {
       // await savePage(page, `${this._courseDownloadPath}/${pageNumber}.${normalizedTitle}`);
     } catch (error) {
       console.error('Failed to download ', link);
-      console.error('Reason:', error.message);
+      console.error('Reason:', (error as Error).message);
     }
 
-    await tab.close();
+    await tab?.close();
   }
 
   async course() {
     const url = this._config.userConfig.courseUrl;
     console.log(`Navigating to courses page. URL: ${url}`);
-    const courseSlug = url.split('/').pop();
+    const courseSlug = url.split('/').pop()!;
     await this._browser.makeSpecial();
 
     const tab = await this._browser.getTab();
@@ -172,7 +173,7 @@ export class Download {
         await Promise.all(pageLinks.splice(0, this._config.batchSize)
           .map((pageLink) => this.downloadPage(pageLink, pageNumber++)));
       } catch (error) {
-        console.error(error.message);
+        console.error((error as Error).message);
       }
     }
   }

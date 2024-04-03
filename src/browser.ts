@@ -1,5 +1,4 @@
 import { launch, PuppeteerLaunchOptions, Browser, Page } from 'puppeteer';
-import { writeFile } from 'node:fs/promises';
 import { PageGotoParams, SaveAs } from './types';
 import { isExists } from './utils';
 import { Configuration } from './configuration';
@@ -7,7 +6,7 @@ import { Configuration } from './configuration';
 export class ChromeBrowser {
   private static _instance: ChromeBrowser;
   private readonly _userDataDir: string;
-  private _browser: Browser = null;
+  private _browser: Browser | null;
   private _isSpecial = false;
   private _isHeadless = true;
   private _config: Configuration;
@@ -16,6 +15,7 @@ export class ChromeBrowser {
     this._config = config;
     this._isHeadless = this._config.userConfig.headless;
     this._userDataDir = this._config.rootDir + '/data';
+    this._browser = null;
   }
 
   private async launch(headless: boolean, args?: PuppeteerLaunchOptions): Promise<void> {
@@ -33,7 +33,7 @@ export class ChromeBrowser {
     return this._instance || (this._instance = new this(config));
   }
 
-  async get(headless = this._isHeadless): Promise<Browser> {
+  async get(headless = this._isHeadless): Promise<Browser | null> {
     if (!this._browser) {
       await this.launch(headless);
     }
@@ -49,7 +49,7 @@ export class ChromeBrowser {
     // If a browser is open but not special then close it
     if (this._browser) {
       await this._browser.close();
-      this._browser = undefined;
+      this._browser = null;
     }
 
     const specialArgs = {
@@ -80,8 +80,8 @@ export class ChromeBrowser {
   }
 
   async newTab(): Promise<BrowserTab> {
-    const page = await this._browser.newPage();
-    const tab = new BrowserTab(page, this._config);
+    const page = await this._browser?.newPage();
+    const tab = new BrowserTab(page!, this._config);
 
     return tab;
   }
@@ -134,7 +134,7 @@ export class BrowserTab {
   private async saveAsMhtml(path: string) {
     const cdp = await this._page.target().createCDPSession();
     const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' });
-    await writeFile(`${path}.mhtml`, data);
+    await Bun.write(`${path}.mhtml`, data);
   }
 
   async savePage(path: string) {

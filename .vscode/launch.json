@@ -16,7 +16,7 @@
                 "<node_internals>/**"
             ],
             "env": {
-                "NODE_PATH": "."
+                "ROOT_PATH": "."
             }
         },
     ]

@@ -19,7 +19,7 @@ export class Configuration {
   }
 
   public get rootDir() {
-    return process.env.NODE_PATH;
+    return process.env['ROOT_PATH'];
   }
 
   public get baseUrl() {

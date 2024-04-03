@@ -27,7 +27,7 @@ class Application {
 
       console.log('=> Done');
     } catch (error) {
-      console.error(error.message);
+      console.error((error as Error).message);
     }
 
     await this._browser.close();
