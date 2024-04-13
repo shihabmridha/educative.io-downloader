@@ -48,13 +48,13 @@ export class Download {
 
       console.log(`Downloading => ${title} - (${link})`);
 
-      await this._browser.makeSpecial();
+      // await this._browser.makeSpecial();
       tab = await this._browser.newTab();
 
       await tab.goTo({ url: link, waitUntil: 'networkidle2' });
 
       // Hoping that PageDown would scroll to the end of the page and will render any lazy loaded component
-      await tab.page.keyboard.press("End");
+      await tab.page.keyboard.press('End');
 
       // Make sure to render the lazy loaded component (it does not guaranteed though)
       await waitFor(3000);
@@ -291,7 +291,7 @@ export class Download {
 //   let page: Page;
 
 //   try {
-//     // await page.click('[aria-label="toggle sidebar"]');
+//     // await page.click('[aria-label='toggle sidebar']');
 //     // document.querySelector()
 //     const normalizedTitle = title.replace(/[^a-zA-Z0-9]/g, '_');
 
@@ -307,10 +307,10 @@ export class Download {
 
 //     await page.goto(link, { timeout: config.httpTimeout, waitUntil: 'networkidle2' });
 
-//     // await page.addStyleTag({ content: 'div[class^="styles__PrevNextButtonWidgetStyled"], div[class^="styles__Footer"], nav { display: none !important; }' });
+//     // await page.addStyleTag({ content: 'div[class^='styles__PrevNextButtonWidgetStyled'], div[class^='styles__Footer'], nav { display: none !important; }' });
 
-//     // await page.addStyleTag({ content: 'div[class^="styles__CodeEditorStyled-sc"]{ height: 5000px !important; }' });
-//     // await page.addStyleTag({ content: 'div[class^="PageContent"]{ max-width: 1000px !important; }' });
+//     // await page.addStyleTag({ content: 'div[class^='styles__CodeEditorStyled-sc']{ height: 5000px !important; }' });
+//     // await page.addStyleTag({ content: 'div[class^='PageContent']{ max-width: 1000px !important; }' });
 //     /**
 //      * The callback function passed to evaluate is actually executed in the browser.
 //      * This is why we have to pass local variables explicitly in the second parameter.
@@ -331,11 +331,11 @@ export class Download {
 
 //         // Show Solution Button Click
 //         try {
-//           const showSolutionXPath = document.evaluate('//button[span[text()="Show Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//           const showSolutionXPath = document.evaluate('//button[span[text()='Show Solution']]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //           for (let i = 0; i < showSolutionXPath.snapshotLength; i++) {
 //             const showSolutionElement = showSolutionXPath.snapshotItem(i) as HTMLElement;
 //             showSolutionElement.click();
-//             const noJustShowXPath = document.evaluate('//span[text()="No, just show the solution"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//             const noJustShowXPath = document.evaluate('//span[text()='No, just show the solution']', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //             for (let j = 0; j < noJustShowXPath.snapshotLength; j++) {
 //               const noJustShowElement = noJustShowXPath.snapshotItem(j) as HTMLElement;
 //               noJustShowElement.click();
@@ -347,7 +347,7 @@ export class Download {
 //           throw error;
 //         }
 
-//         const correctSolutionStyle = document.querySelectorAll('[class*="styles__Caption-sc"]');
+//         const correctSolutionStyle = document.querySelectorAll('[class*='styles__Caption-sc']');
 
 //         correctSolutionStyle.forEach((item) => {
 //           item.className = '';
@@ -355,7 +355,7 @@ export class Download {
 
 //         // Monaco Content
 //         try {
-//           const monacoEditorContainer = document.evaluate('//div[contains(@class, "monaco-editor")]/ancestor::div[contains(@class, "styles__CodeEditorStyled")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//           const monacoEditorContainer = document.evaluate('//div[contains(@class, 'monaco-editor')]/ancestor::div[contains(@class, 'styles__CodeEditorStyled')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //           // Add custom class to div surrounding. So that we can handle easily in for loop.
 //           for (let i = 0; i < monacoEditorContainer.snapshotLength; i++) {
@@ -363,12 +363,12 @@ export class Download {
 //             addClass.className = 'rale' + i;
 //           }
 
-//           const raleDivs = document.evaluate('//div[contains(@class, "rale")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//           const raleDivs = document.evaluate('//div[contains(@class, 'rale')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //           for (let i = 0; i < raleDivs.snapshotLength; i++) {
-//             const linesContent = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]/descendant::div[contains(@class, "lines-content")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//             const linesContent = document.evaluate('//div[contains(@class, 'rale' + i + '')]/descendant::div[contains(@class, 'styles__CodeEditorStyled-sc')]/descendant::div[contains(@class, 'lines-content')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-//             const raleWithCodeEditor = document.evaluate('//div[contains(@class, "rale' + i + '")]/descendant::div[contains(@class, "styles__CodeEditorStyled-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//             const raleWithCodeEditor = document.evaluate('//div[contains(@class, 'rale' + i + '')]/descendant::div[contains(@class, 'styles__CodeEditorStyled-sc')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //             if (linesContent.snapshotLength > 0) {
 //               let allCodeContent = '';
@@ -428,7 +428,7 @@ export class Download {
 //                 }
 //               });
 
-//               const hideSol = document.evaluate('//button[span[text()="Hide Solution"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//               const hideSol = document.evaluate('//button[span[text()='Hide Solution']]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //               for (let i = 0; i < hideSol.snapshotLength; i++) {
 //                 const hideEle = hideSol.snapshotItem(i) as HTMLElement;
@@ -486,7 +486,7 @@ export class Download {
 
 //     // Check Unexpected Error : Some times page throw unexpected error.
 //     try {
-//       const errorOccured = document.evaluate('//h2[text()="An unexpected error has occurred."]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const errorOccured = document.evaluate('//h2[text()='An unexpected error has occurred.']', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //       if (errorOccured.snapshotLength > 0) {
 //         const err = new Error('Error Occured in Page');
@@ -514,9 +514,9 @@ export class Download {
 
 //     // Check Unexpected Error : Suddenly Logout happens, Then we should check Login button and throw error.
 //     try {
-//       const noContent = document.evaluate('(//div[contains(@class, "fade-container")])[last()]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const noContent = document.evaluate('(//div[contains(@class, 'fade-container')])[last()]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-//       const loginButt = document.evaluate('//button[span[text()="LOGIN"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const loginButt = document.evaluate('//button[span[text()='LOGIN']]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //       if (noContent.snapshotLength > 0) {
 //         const fc = noContent.snapshotItem(0) as HTMLElement;
@@ -617,7 +617,7 @@ export class Download {
 // async function buttonClicks() {
 //   // Slides :  Expand all slides in the page
 //   try {
-//     const xPathResult = document.evaluate('//button[contains(@class, "AnimationPlus")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const xPathResult = document.evaluate('//button[contains(@class, 'AnimationPlus')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //     for (let i = 0; i < xPathResult.snapshotLength; i++) {
 //       const element = xPathResult.snapshotItem(i) as HTMLElement;
 //       element.click();
@@ -629,9 +629,9 @@ export class Download {
 
 //   // IDECode : Click all solutions in IDE code block, copy text and append at end of the page.
 //   try {
-//     const codeContainerDivs = document.evaluate('//div[contains(@class, "Widget__FilesList")]/div[contains(@class, "styles__Files")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const codeContainerDivs = document.evaluate('//div[contains(@class, 'Widget__FilesList')]/div[contains(@class, 'styles__Files')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
-//     const widgetMultiFilesDiv = document.evaluate('//div[contains(@class, "code-container")]/div[contains(@class, "Widget__MultiFiles")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const widgetMultiFilesDiv = document.evaluate('//div[contains(@class, 'code-container')]/div[contains(@class, 'Widget__MultiFiles')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //     for (let i = 0; i < codeContainerDivs.snapshotLength; i++) {
 //       const codeContainer = codeContainerDivs.snapshotItem(i);
@@ -640,7 +640,7 @@ export class Download {
 //         const codeFileLink = item as HTMLDivElement;
 //         codeFileLink.click();
 
-//         const codeContent = document.evaluate('//div[contains(@class, "cmcomp-single-editor-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//         const codeContent = document.evaluate('//div[contains(@class, 'cmcomp-single-editor-container')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //         for (let j = 0; j < codeContent.snapshotLength; j++) {
 //           if (i === j) {
@@ -692,7 +692,7 @@ export class Download {
 
 //   buttonsToClick.forEach((buttonText) => {
 //     try {
-//       const buttonTextXpath = document.evaluate('//button[span[text()="' + buttonText + '"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const buttonTextXpath = document.evaluate('//button[span[text()='' + buttonText + '']]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //       for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
 //         const buttonTextXpathElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
 //         buttonTextXpathElement.click();
@@ -705,7 +705,7 @@ export class Download {
 
 //   // Show Explanation button click
 //   try {
-//     const buttonTextXpath = document.evaluate('//h4[text()="Show Explanation"]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const buttonTextXpath = document.evaluate('//h4[text()='Show Explanation']', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //     for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
 //       const showSolutionElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
 //       showSolutionElement.click();
@@ -717,7 +717,7 @@ export class Download {
 
 //   // FOR UL Links Code.
 //   try {
-//     const codeTabLinks = document.evaluate('//div[contains(@class, "styles__ViewerComponentViewStyled")]/descendant::ul[contains(@class, "styles__TabNav")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const codeTabLinks = document.evaluate('//div[contains(@class, 'styles__ViewerComponentViewStyled')]/descendant::ul[contains(@class, 'styles__TabNav')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //     // Add custom class to div surrounding. So that we can handle easily in for loop.
 //     for (let i = 0; i < codeTabLinks.snapshotLength; i++) {
@@ -725,16 +725,16 @@ export class Download {
 //       addClass.className = 'devd' + i;
 //     }
 
-//     const devdDivs = document.evaluate('//div[contains(@class, "devd")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const devdDivs = document.evaluate('//div[contains(@class, 'devd')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //     for (let i = 0; i < devdDivs.snapshotLength; i++) {
-//       const kale = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::span[contains(@class, "styles__DesktopOnly-sc")]/descendant::span[contains(@class, "styles__TabTitle-sc")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const kale = document.evaluate('//div[contains(@class, 'devd' + i + '')]/descendant::span[contains(@class, 'styles__DesktopOnly-sc')]/descendant::span[contains(@class, 'styles__TabTitle-sc')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //       for (let k = 0; k < kale.snapshotLength; k++) {
 //         const codeFileLink = kale.snapshotItem(k) as HTMLElement;
 //         codeFileLink.click();
 
-//         const devdWithCodeContainer = document.evaluate('//div[contains(@class, "devd' + i + '")]/descendant::div[contains(@class, "code-container")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//         const devdWithCodeContainer = document.evaluate('//div[contains(@class, 'devd' + i + '')]/descendant::div[contains(@class, 'code-container')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 
 //         let allCodeContent = '';
 //         allCodeContent += '\n---------------------------------------------------------------------------------------------------\n';
@@ -769,7 +769,7 @@ export class Download {
 
 //     // eslint-disable-next-line no-constant-condition
 //     while (true) {
-//       const slideRightResult = document.evaluate('//button[contains(@class, "styles__SlideRightButton")]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//       const slideRightResult = document.evaluate('//button[contains(@class, 'styles__SlideRightButton')]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //       for (let i = 0; i < slideRightResult.snapshotLength; i++) {
 //         const slideRightElement = slideRightResult.snapshotItem(i) as HTMLButtonElement;
 //         slideRightElement.click();
@@ -788,7 +788,7 @@ export class Download {
 
 //   // Check Answers in Quiz
 //   try {
-//     const buttonTextXpath = document.evaluate('//button[span[text()="Check Answers"]]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
+//     const buttonTextXpath = document.evaluate('//button[span[text()='Check Answers']]', document, null, XPathResult.ORDERED_NODE_SNAPSHOT_TYPE, null);
 //     for (let i = 0; i < buttonTextXpath.snapshotLength; i++) {
 //       const buttonTextXpathElement = buttonTextXpath.snapshotItem(i) as HTMLElement;
 //       buttonTextXpathElement.click();

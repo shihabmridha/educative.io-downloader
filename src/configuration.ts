@@ -1,20 +1,29 @@
-import { readFileSync } from "fs";
-import { UserConfig } from "./types";
+import { SaveAs, UserConfig } from './types';
 
 export class Configuration {
   private readonly _baseUrl = 'https://www.educative.io';
   private readonly _apiUrl = this._baseUrl + '/api';
   private readonly _courseUrlPrefix = this._baseUrl + '/courses';
   private readonly _batchSize = 1;
-  private readonly _httpTimeout = 30000;
   private readonly _userConfig: UserConfig;
+  private readonly _httpTimeout = 30000;
 
   constructor() {
-    const data = readFileSync(`${this.rootDir}/config/default.json`, 'utf-8');
-    this._userConfig = JSON.parse(data);
+    this._userConfig = {
+      email: Bun.env['EMAIL']!,
+      password: Bun.env['PASSWORD']!,
+      skipLogin: Bun.env['SKIP_LOGIN'] === 'true',
+      saveAs: Bun.env['SAVE_AS'] as SaveAs,
+      multiLanguage: Bun.env['MULTI_LANGUAGE'] === 'true',
+      headless: Bun.env['HEADLESS'] === 'true',
+      courseUrl: Bun.env['COURSE_URL']!,
+      downloadAll: Bun.env['DOWNLOAD_ALL'] === 'true',
+    };
 
     if (!this.userConfig.downloadAll && !this.userConfig.courseUrl) {
-      throw new Error('Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...');
+      throw new Error(
+        'Either set courseUrl or make downloadAllCourses true in config file.\nExitting now...',
+      );
     }
   }
 

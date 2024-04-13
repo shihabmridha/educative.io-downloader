@@ -2,9 +2,9 @@
   "name": "educative.io-downloader",
   "version": "2.0.0",
   "description": "Download course from educative.io",
-  "main": "build/app.js",
+  "main": "src/app.ts",
   "dependencies": {
-    "puppeteer": "^21.11.0"
+    "puppeteer": "^22.6.3"
   },
   "devDependencies": {
     "@types/bun": "^1.0.12",

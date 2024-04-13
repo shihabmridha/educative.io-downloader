@@ -1,4 +1,4 @@
-import { PuppeteerLifeCycleEvent } from "puppeteer";
+import { PuppeteerLifeCycleEvent } from 'puppeteer';
 
 export interface UserConfig {
   email: string;

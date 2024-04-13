@@ -16,8 +16,9 @@ class Application {
     this._auth = new Authentication(this._config, this._browser);
     this._download = new Download(this._config, this._browser);
 
-    process.on('unhandledRejection', this.uncaughtExceptionHandler);
-    process.on('uncaughtException', this.uncaughtExceptionHandler);
+    process.on('SIGINT', this.gracefulExit.bind(this));
+    process.on('unhandledRejection', this.gracefulExit.bind(this));
+    process.on('uncaughtException', this.gracefulExit.bind(this));
   }
 
   public async run() {
@@ -35,7 +36,6 @@ class Application {
 
     // if (config.userConfig.downloadAll) {
     //   console.log('Getting all the available courses to download...');
-
 
     // const allCourseApiUrl = config.apiUrl + '/api/reader/featured';
     // const courseUrlSlugList = await getDownloadableCourses(allCourseApiUrl);
@@ -58,17 +58,12 @@ class Application {
     // }
   }
 
-  private uncaughtExceptionHandler(error: Error) {
-    console.error(error);
+  private gracefulExit(error?: Error) {
+    if (error) console.error(error);
 
-    this._browser.close()
-      .finally(() => {
-        this.gracefulExit();
-      });
-  }
-
-  private gracefulExit() {
-    process.exit(1);
+    this._browser.close().finally(() => {
+      process.exit(1);
+    });
   }
 }
 

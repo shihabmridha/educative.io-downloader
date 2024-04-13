@@ -22,7 +22,7 @@ export class ChromeBrowser {
     this._browser = await launch({
       ...args,
       userDataDir: this._userDataDir,
-      headless: headless ? 'new' : false,
+      headless: headless ? 'shell' : false,
       // devtools: true,
     });
 
@@ -123,16 +123,23 @@ export class BrowserTab {
 
   private async saveAsPdf(path: string) {
     await this._page.emulateMediaType('screen');
-    await this._page.pdf({
-      path: `${path}.pdf`,
+    // await this._page.pdf({
+    //   path: `${path}.pdf`,
+    //   printBackground: true,
+    //   format: 'A4',
+    //   margin: { top: 0, right: 0, bottom: 0, left: 0 }
+    // });
+
+    // Workaround for Bun. https://github.com/oven-sh/bun/issues/8482
+    await Bun.write(`${path}.pdf`, await this._page.pdf({
       printBackground: true,
       format: 'A4',
       margin: { top: 0, right: 0, bottom: 0, left: 0 }
-    });
+    }));
   }
 
   private async saveAsMhtml(path: string) {
-    const cdp = await this._page.target().createCDPSession();
+    const cdp = await this._page.createCDPSession();
     const { data } = await cdp.send('Page.captureSnapshot', { format: 'mhtml' });
     await Bun.write(`${path}.mhtml`, data);
   }
